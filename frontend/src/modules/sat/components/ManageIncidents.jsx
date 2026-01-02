@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Filter, Search } from 'lucide-react';
-import { getIncidents } from '../data/mockData';
+import { satService } from '../services/satService';
 
 const ManageIncidents = ({ onBack, onSelectIncident }) => {
     const [incidents, setIncidents] = useState([]);
@@ -14,8 +14,11 @@ const ManageIncidents = ({ onBack, onSelectIncident }) => {
 
     const loadIncidents = () => {
         setLoading(true);
-        getIncidents().then(data => {
+        satService.getIncidents().then(data => {
             setIncidents(data);
+            setLoading(false);
+        }).catch(err => {
+            console.error(err);
             setLoading(false);
         });
     };
@@ -44,7 +47,7 @@ const ManageIncidents = ({ onBack, onSelectIncident }) => {
         const matchesStatus = filterStatus === 'all' || inc.status === filterStatus;
         const matchesSearch = inc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
             inc.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            inc.machineId.toLowerCase().includes(searchTerm.toLowerCase());
+            inc.machine_id.toLowerCase().includes(searchTerm.toLowerCase());
         return matchesStatus && matchesSearch;
     });
 
@@ -134,12 +137,12 @@ const ManageIncidents = ({ onBack, onSelectIncident }) => {
                         >
                             <div>
                                 <span style={{ fontWeight: 'bold', display: 'block', color: 'var(--text-main)' }}>{inc.id}</span>
-                                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{new Date(inc.createdAt).toLocaleDateString()}</span>
+                                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{new Date(inc.created_at).toLocaleDateString()}</span>
                             </div>
                             <div>
                                 <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-main)' }}>{inc.title}</h4>
                                 <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <span style={{ padding: '0.2rem 0.5rem', background: 'var(--bg-offset)', borderRadius: '4px' }}>{inc.machineId}</span>
+                                    <span style={{ padding: '0.2rem 0.5rem', background: 'var(--bg-offset)', borderRadius: '4px' }}>{inc.machine_id}</span>
                                 </span>
                             </div>
                             <div style={{ textAlign: 'right' }}>

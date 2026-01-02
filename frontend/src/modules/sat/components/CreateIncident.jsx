@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Save, AlertCircle } from 'lucide-react';
-import { getMachines, createIncident } from '../data/mockData';
+import { satService } from '../services/satService';
 
 const CreateIncident = ({ onBack, onCreated }) => {
     const [machines, setMachines] = useState([]);
@@ -20,8 +20,11 @@ const CreateIncident = ({ onBack, onCreated }) => {
     });
 
     useEffect(() => {
-        getMachines().then(data => {
+        satService.getMachines().then(data => {
             setMachines(data);
+            setLoading(false);
+        }).catch(err => {
+            console.error(err);
             setLoading(false);
         });
     }, []);
@@ -53,7 +56,15 @@ const CreateIncident = ({ onBack, onCreated }) => {
         e.preventDefault();
         setSubmitting(true);
         try {
-            await createIncident(formData);
+            const payload = {
+                ...formData,
+                machine_id: formData.machineId,
+                reported_by: formData.reportedBy
+            };
+            delete payload.machineId;
+            delete payload.reportedBy;
+
+            await satService.createIncident(payload);
             onCreated();
         } catch (error) {
             console.error('Error creating incident:', error);

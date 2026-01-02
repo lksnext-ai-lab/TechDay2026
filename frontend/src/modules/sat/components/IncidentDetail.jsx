@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Send, CheckCircle, Clock, User, AlertTriangle } from 'lucide-react';
-import { getIncidents, updateIncident, addLog } from '../data/mockData';
+import { satService } from '../services/satService';
 
 const IncidentDetail = ({ incidentId, onBack }) => {
     const [incident, setIncident] = useState(null);
@@ -14,9 +14,12 @@ const IncidentDetail = ({ incidentId, onBack }) => {
 
     const loadIncident = () => {
         setLoading(true);
-        getIncidents().then(incidents => {
+        satService.getIncidents().then(incidents => {
             const found = incidents.find(i => i.id === incidentId);
             setIncident(found);
+            setLoading(false);
+        }).catch(err => {
+            console.error(err);
             setLoading(false);
         });
     };
@@ -26,7 +29,7 @@ const IncidentDetail = ({ incidentId, onBack }) => {
         if (!newLog.trim()) return;
         setSendingLog(true);
         try {
-            const updated = await addLog(incident.id, { author: 'Operador', text: newLog });
+            const updated = await satService.addLog(incident.id, { author: 'Operador', text: newLog });
             setIncident(updated);
             setNewLog('');
         } catch (error) {
@@ -42,7 +45,7 @@ const IncidentDetail = ({ incidentId, onBack }) => {
             alert('Indexando solución en Base de Datos Semántica...');
             // Simulate delay for indexing
             setTimeout(async () => {
-                const updated = await updateIncident(incident.id, { status: 'resolved', closedAt: new Date().toISOString() });
+                const updated = await satService.updateIncident(incident.id, { status: 'resolved', closed_at: new Date().toISOString() });
                 setIncident(updated);
                 alert('Incidencia cerrada e indexada correctamente.');
             }, 1000);
@@ -66,7 +69,7 @@ const IncidentDetail = ({ incidentId, onBack }) => {
                 </button>
                 <div style={{ flex: 1 }}>
                     <h2 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.5rem' }}>{incident.title}</h2>
-                    <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{incident.id} • {new Date(incident.createdAt).toLocaleString()}</span>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{incident.id} • {new Date(incident.created_at).toLocaleString()}</span>
                 </div>
                 {incident.status !== 'resolved' && incident.status !== 'closed' && (
                     <button
@@ -139,14 +142,14 @@ const IncidentDetail = ({ incidentId, onBack }) => {
                         <div style={{ marginTop: '1rem' }}>
                             <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>Electrodoméstico</label>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-main)' }}>
-                                <AlertTriangle size={16} /> {incident.machineId}
+                                <AlertTriangle size={16} /> {incident.machine_id}
                             </div>
                         </div>
 
                         <div style={{ marginTop: '1rem' }}>
                             <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>Reportado por</label>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-main)' }}>
-                                <User size={16} /> {incident.reportedBy}
+                                <User size={16} /> {incident.reported_by}
                             </div>
                         </div>
                     </div>
