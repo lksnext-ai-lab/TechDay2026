@@ -1,0 +1,20 @@
+[project]
+name = "lks-techday-bff"
+version = "0.1.0"
+description = "Backend-for-Frontend for LKS Tech Day"
+authors = [
+    {name = "Aritz",email = "aritz@example.com"}
+]
+readme = "README.md"
+requires-python = "^3.11"
+dependencies = [
+    "fastapi (>=0.128.0,<0.129.0)",
+    "uvicorn (>=0.40.0,<0.41.0)",
+    "httpx (>=0.28.1,<0.29.0)",
+    "python-dotenv (>=1.2.1,<2.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

@@ -27,11 +27,8 @@ const Chat = () => {
             if (!chatConfig.appId || !chatConfig.agentId) return;
 
             try {
-                await fetch(`${apiConfig.baseUrl}/public/v1/app/${chatConfig.appId}/chat/${chatConfig.agentId}/reset`, {
-                    method: 'POST',
-                    headers: {
-                        'X-API-KEY': apiConfig.apiKey
-                    }
+                await fetch(`${apiConfig.baseUrl}/api/chat/${chatConfig.appId}/${chatConfig.agentId}/reset`, {
+                    method: 'POST'
                 });
                 console.log("Conversation reset");
             } catch (error) {
@@ -57,11 +54,10 @@ const Chat = () => {
                 throw new Error("Configuración incompleta. Por favor revisa el App ID y Agent ID en /config");
             }
 
-            const response = await fetch(`${apiConfig.baseUrl}/public/v1/app/${chatConfig.appId}/chat/${chatConfig.agentId}/call`, {
+            const response = await fetch(`${apiConfig.baseUrl}/api/chat/${chatConfig.appId}/${chatConfig.agentId}/call`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-API-KEY': apiConfig.apiKey
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     message: userMessage.text

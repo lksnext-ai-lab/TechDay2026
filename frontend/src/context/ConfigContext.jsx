@@ -13,7 +13,6 @@ export const useConfig = () => {
 export const ConfigProvider = ({ children }) => {
     // API Config (sourced from env, read-only/system level usually, but we keep option to extend)
     const [apiConfig] = useState({
-        apiKey: import.meta.env.VITE_API_KEY || '',
         baseUrl: import.meta.env.VITE_API_BASE_URL || ''
     });
 
