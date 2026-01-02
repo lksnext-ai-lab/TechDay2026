@@ -1,21 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useConfig } from '../../context/ConfigContext';
 import { Send, User, Bot, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const MOCK_RESPONSES = {
-    default: "Interesante pregunta. En LKS Next estamos aplicando IA Generativa para resolver este tipo de retos. ¿Te gustaría saber más sobre nuestros casos de éxito?",
-    hola: "¡Hola! Bienvenido al stand de LKS Next en el Tech Day. Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?",
-    "tech day": "El Tech Day es una oportunidad fantástica para conectar y descubrir las últimas tendencias tecnológicas. ¡Espero que estés disfrutando!",
-    "ia": "La Inteligencia Artificial es uno de los pilares de nuestra estrategia digital. Ayudamos a empresas a integrar modelos LLM en sus procesos.",
-    "lks": "LKS Next es una consultora tecnológica líder. Acompañamos a nuestros clientes en su transformación digital con cercanía y compromiso.",
-    "ayuda": "Puedo explicarte qué hacemos en IA, contarte sobre LKS Next o simplemente charlar. ¡Prueba a preguntarme algo!",
-    "adios": "¡Hasta pronto! Disfruta del evento.",
-    "gracias": "¡De nada! Estamos aquí para ayudar."
-};
+
 
 const Chat = () => {
+    const { chatConfig, apiConfig } = useConfig();
     const [messages, setMessages] = useState([
-        { id: 1, text: MOCK_RESPONSES['hola'], sender: 'bot' }
+        { id: 1, text: "¡Hola! Bienvenido al stand de LKS Next en el Tech Day. Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?", sender: 'bot' }
     ]);
     const [input, setInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
@@ -29,7 +22,27 @@ const Chat = () => {
         scrollToBottom();
     }, [messages, isTyping]);
 
-    const handleSend = (e) => {
+    useEffect(() => {
+        const resetConversation = async () => {
+            if (!chatConfig.appId || !chatConfig.agentId) return;
+
+            try {
+                await fetch(`${apiConfig.baseUrl}/public/v1/app/${chatConfig.appId}/chat/${chatConfig.agentId}/reset`, {
+                    method: 'POST',
+                    headers: {
+                        'X-API-KEY': apiConfig.apiKey
+                    }
+                });
+                console.log("Conversation reset");
+            } catch (error) {
+                console.error("Failed to reset conversation:", error);
+            }
+        };
+
+        resetConversation();
+    }, [chatConfig.appId, chatConfig.agentId, apiConfig.baseUrl, apiConfig.apiKey]);
+
+    const handleSend = async (e) => {
         e.preventDefault();
         if (!input.trim()) return;
 
@@ -38,24 +51,43 @@ const Chat = () => {
         setInput('');
         setIsTyping(true);
 
-        // Mock response logic
-        setTimeout(() => {
-            const lowerInput = userMessage.text.toLowerCase();
-            let responseText = MOCK_RESPONSES.default;
-
-            for (const [key, value] of Object.entries(MOCK_RESPONSES)) {
-                if (lowerInput.includes(key)) {
-                    responseText = value;
-                    break;
-                }
+        try {
+            if (!chatConfig.appId || !chatConfig.agentId) {
+                // If config is missing, show a helpful message (or fallback to a mock response if preferred, but here we error)
+                throw new Error("Configuración incompleta. Por favor revisa el App ID y Agent ID en /config");
             }
+
+            const response = await fetch(`${apiConfig.baseUrl}/public/v1/app/${chatConfig.appId}/chat/${chatConfig.agentId}/call`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-API-KEY': apiConfig.apiKey
+                },
+                body: JSON.stringify({
+                    message: userMessage.text
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Error del servidor: ${response.status}`);
+            }
+
+            const data = await response.json();
+            const botResponse = data.response; // Adjust based on actual API response structure if different
 
             setMessages(prev => [
                 ...prev,
-                { id: Date.now() + 1, text: responseText, sender: 'bot' }
+                { id: Date.now() + 1, text: botResponse, sender: 'bot' }
             ]);
+        } catch (error) {
+            console.error("Chat Error:", error);
+            setMessages(prev => [
+                ...prev,
+                { id: Date.now() + 1, text: `Lo siento, hubo un error: ${error.message}`, sender: 'bot' }
+            ]);
+        } finally {
             setIsTyping(false);
-        }, 1500);
+        }
     };
 
     return (
@@ -64,7 +96,7 @@ const Chat = () => {
                 <Link to="/" className="btn" style={{ background: 'var(--accent)', padding: '0.5rem' }}>
                     <ArrowLeft size={20} color="var(--text-main)" />
                 </Link>
-                <h2 style={{ margin: 0, color: 'var(--primary)' }}>Asistente IA</h2>
+                <h2 style={{ margin: 0, color: 'var(--primary)' }}>{chatConfig.title || 'Asistente IA'}</h2>
             </div>
 
             <div style={{

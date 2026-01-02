@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { MessageSquare, Wrench, FileText, Gift, ArrowRight } from 'lucide-react';
+import { MessageSquare, Wrench, FileText, Gift, ArrowRight, Settings } from 'lucide-react';
 
 const modules = [
     {
@@ -82,6 +82,25 @@ const Home = () => {
                     </Link>
                 ))}
             </div>
+
+            <Link to="/config" style={{
+                position: 'fixed',
+                bottom: '1rem',
+                right: '1rem',
+                color: 'var(--text-muted)',
+                opacity: 0.5,
+                padding: '0.5rem',
+                transition: 'opacity 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+            }}
+                onMouseEnter={(e) => e.currentTarget.style.opacity = 1}
+                onMouseLeave={(e) => e.currentTarget.style.opacity = 0.5}
+                title="Configuración"
+            >
+                <Settings size={20} />
+            </Link>
         </div>
     );
 };
