@@ -16,32 +16,70 @@ export const ConfigProvider = ({ children }) => {
         baseUrl: import.meta.env.VITE_API_BASE_URL || ''
     });
 
-    // Chat Config (sourced from localStorage -> env -> empty)
+    // Global App ID (shared between modules)
+    const [globalAppId, setGlobalAppId] = useState(() => {
+        return localStorage.getItem('lks_techday_app_id') || import.meta.env.VITE_APP_ID || '';
+    });
+
+    // Chat Config
     const [chatConfig, setChatConfig] = useState(() => {
         const saved = localStorage.getItem('lks_techday_chat_config');
         if (saved) {
             return JSON.parse(saved);
         }
         return {
-            appId: import.meta.env.VITE_APP_ID || '',
             agentId: import.meta.env.VITE_AGENT_ID || '',
             title: import.meta.env.VITE_CHAT_TITLE || 'Asistente IA'
         };
     });
 
+    // Swarm Config
+    const [swarmConfig, setSwarmConfig] = useState(() => {
+        const saved = localStorage.getItem('lks_techday_swarm_config');
+        if (saved) {
+            return JSON.parse(saved);
+        }
+        return {
+            title: 'Sala de Brainstorming',
+            moderatorAgentId: '',
+            agents: [
+                { id: 'strategist', name: 'Estratega', description: 'Visión de negocio, ROI y estrategia.', agentId: '', isActive: true, color: '#1a4b8c' },
+                { id: 'tech', name: 'Tech Lead', description: 'Arquitectura, factibilidad y tecnología.', agentId: '', isActive: true, color: '#2c7a7b' },
+                { id: 'cx', name: 'CX Designer', description: 'Experiencia de usuario, diseño y empatía.', agentId: '', isActive: true, color: '#702459' },
+                { id: 'risk', name: 'Risk Analyst', description: 'Seguridad, cumplimiento y ética.', agentId: '', isActive: true, color: '#9c4221' }
+            ]
+        };
+    });
+
     // Save to localStorage whenever config changes
+    useEffect(() => {
+        localStorage.setItem('lks_techday_app_id', globalAppId);
+    }, [globalAppId]);
+
     useEffect(() => {
         localStorage.setItem('lks_techday_chat_config', JSON.stringify(chatConfig));
     }, [chatConfig]);
+
+    useEffect(() => {
+        localStorage.setItem('lks_techday_swarm_config', JSON.stringify(swarmConfig));
+    }, [swarmConfig]);
 
     const updateChatConfig = (newConfig) => {
         setChatConfig(prev => ({ ...prev, ...newConfig }));
     };
 
+    const updateSwarmConfig = (newConfig) => {
+        setSwarmConfig(prev => ({ ...prev, ...newConfig }));
+    };
+
     const value = {
         apiConfig,
+        globalAppId,
+        setGlobalAppId,
         chatConfig,
-        updateChatConfig
+        updateChatConfig,
+        swarmConfig,
+        updateSwarmConfig
     };
 
     return (

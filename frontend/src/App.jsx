@@ -8,6 +8,7 @@ import Ocr from './modules/ocr/Ocr';
 import Sorteo from './modules/sorteo/Sorteo';
 import { ConfigProvider } from './context/ConfigContext';
 import ConfigPage from './pages/ConfigPage';
+import SwarmModule from './modules/swarm/SwarmModule';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
             <Route path="chat" element={<Chat />} />
             <Route path="sat" element={<Sat />} />
             <Route path="ocr" element={<Ocr />} />
+            <Route path="swarm" element={<SwarmModule />} />
             <Route path="sorteo" element={<Sorteo />} />
           </Route>
           <Route path="/config" element={<ConfigPage />} />

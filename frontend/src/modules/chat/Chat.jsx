@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 
 
 const Chat = () => {
-    const { chatConfig, apiConfig } = useConfig();
+    const { chatConfig, apiConfig, globalAppId } = useConfig();
     const [messages, setMessages] = useState([
         { id: 1, text: "¡Hola! Bienvenido al stand de LKS Next en el Tech Day. Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?", sender: 'bot' }
     ]);
@@ -24,10 +24,10 @@ const Chat = () => {
 
     useEffect(() => {
         const resetConversation = async () => {
-            if (!chatConfig.appId || !chatConfig.agentId) return;
+            if (!globalAppId || !chatConfig.agentId) return;
 
             try {
-                await fetch(`${apiConfig.baseUrl}/api/chat/${chatConfig.appId}/${chatConfig.agentId}/reset`, {
+                await fetch(`${apiConfig.baseUrl}/api/chat/${globalAppId}/${chatConfig.agentId}/reset`, {
                     method: 'POST'
                 });
                 console.log("Conversation reset");
@@ -37,7 +37,7 @@ const Chat = () => {
         };
 
         resetConversation();
-    }, [chatConfig.appId, chatConfig.agentId, apiConfig.baseUrl, apiConfig.apiKey]);
+    }, [globalAppId, chatConfig.agentId, apiConfig.baseUrl]);
 
     const handleSend = async (e) => {
         e.preventDefault();
@@ -49,12 +49,12 @@ const Chat = () => {
         setIsTyping(true);
 
         try {
-            if (!chatConfig.appId || !chatConfig.agentId) {
+            if (!globalAppId || !chatConfig.agentId) {
                 // If config is missing, show a helpful message (or fallback to a mock response if preferred, but here we error)
                 throw new Error("Configuración incompleta. Por favor revisa el App ID y Agent ID en /config");
             }
 
-            const response = await fetch(`${apiConfig.baseUrl}/api/chat/${chatConfig.appId}/${chatConfig.agentId}/call`, {
+            const response = await fetch(`${apiConfig.baseUrl}/api/chat/${globalAppId}/${chatConfig.agentId}/call`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

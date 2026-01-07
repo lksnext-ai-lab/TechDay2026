@@ -4,6 +4,14 @@ import { MessageSquare, Wrench, FileText, Gift, ArrowRight, Settings } from 'luc
 
 const modules = [
     {
+        id: 'swarm',
+        title: 'Sala de Brainstorming',
+        description: 'Observa a un equipo de IAs debatiendo y resolviendo retos en tiempo real.',
+        icon: MessageSquare,
+        path: '/swarm',
+        color: '#1a4b8c'
+    },
+    {
         id: 'chat',
         title: 'Asistente IA',
         description: 'Conversa con nuestra IA generativa para resolver dudas.',
