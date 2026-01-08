@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Filter, Search } from 'lucide-react';
+import { ArrowLeft, Filter, Search, Trash2 } from 'lucide-react';
 import { satService } from '../services/satService';
+import { useConfig } from '../../../context/ConfigContext';
 
 const ManageIncidents = ({ onBack, onSelectIncident }) => {
+    const { globalAppId, satConfig } = useConfig();
     const [incidents, setIncidents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filterStatus, setFilterStatus] = useState('all');
@@ -21,6 +23,19 @@ const ManageIncidents = ({ onBack, onSelectIncident }) => {
             console.error(err);
             setLoading(false);
         });
+    };
+
+    const handleDelete = async (e, id) => {
+        e.stopPropagation();
+        if (!window.confirm('¿Desea eliminar esta incidencia permanentemente?')) return;
+
+        try {
+            await satService.deleteIncident(id, globalAppId, satConfig.siloId);
+            setIncidents(prev => prev.filter(inc => inc.id !== id));
+        } catch (error) {
+            console.error('Error deleting incident:', error);
+            alert('Error al eliminar la incidencia.');
+        }
     };
 
     const getStatusColor = (status) => {
@@ -128,7 +143,7 @@ const ManageIncidents = ({ onBack, onSelectIncident }) => {
                                 borderLeft: `4px solid ${getStatusColor(inc.status)}`,
                                 transition: 'transform 0.2s',
                                 display: 'grid',
-                                gridTemplateColumns: 'minmax(100px, 1fr) 2fr 1fr',
+                                gridTemplateColumns: 'minmax(100px, 1fr) 2fr 1fr 40px',
                                 gap: '1rem',
                                 alignItems: 'center'
                             }}
@@ -156,6 +171,27 @@ const ManageIncidents = ({ onBack, onSelectIncident }) => {
                                 }}>
                                     {getStatusLabel(inc.status)}
                                 </span>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                                <button
+                                    onClick={(e) => handleDelete(e, inc.id)}
+                                    style={{
+                                        background: 'transparent',
+                                        border: 'none',
+                                        color: 'var(--text-muted)',
+                                        cursor: 'pointer',
+                                        padding: '0.5rem',
+                                        borderRadius: '50%',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        transition: 'background 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#fee2e2'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                >
+                                    <Trash2 size={18} color="#ef4444" />
+                                </button>
                             </div>
                         </div>
                     ))

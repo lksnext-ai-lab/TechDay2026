@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Send, CheckCircle, Clock, User, AlertTriangle } from 'lucide-react';
 import { satService } from '../services/satService';
+import { useConfig } from '../../../context/ConfigContext';
 
 const IncidentDetail = ({ incidentId, onBack }) => {
+    const { globalAppId, satConfig } = useConfig();
     const [incident, setIncident] = useState(null);
     const [loading, setLoading] = useState(true);
     const [newLog, setNewLog] = useState('');
@@ -29,8 +31,8 @@ const IncidentDetail = ({ incidentId, onBack }) => {
         if (!newLog.trim()) return;
         setSendingLog(true);
         try {
-            const updated = await satService.addLog(incident.id, { author: 'Operador', text: newLog });
-            setIncident(updated);
+            await satService.addLog(incident.id, { author: 'Operador', text: newLog });
+            await loadIncident();
             setNewLog('');
         } catch (error) {
             console.error('Error adding log:', error);
@@ -40,17 +42,40 @@ const IncidentDetail = ({ incidentId, onBack }) => {
     };
 
     const handleResolve = async () => {
-        if (!window.confirm('¿Está seguro de cerrar esta incidencia? Se indexará en la BD de conocimiento.')) return;
+        if (!window.confirm('¿Está seguro de cerrar esta incidencia como RESUELTA? Se indexará en la BD de conocimiento de Mattin.')) return;
         try {
-            alert('Indexando solución en Base de Datos Semántica...');
-            // Simulate delay for indexing
-            setTimeout(async () => {
-                const updated = await satService.updateIncident(incident.id, { status: 'resolved', closed_at: new Date().toISOString() });
-                setIncident(updated);
-                alert('Incidencia cerrada e indexada correctamente.');
-            }, 1000);
+            setSendingLog(true);
+            const updated = await satService.updateIncident(
+                incident.id,
+                { status: 'resolved', closed_at: new Date().toISOString() },
+                globalAppId,
+                satConfig.siloId
+            );
+            setIncident(updated);
+            alert('Incidencia resuelta e indexada correctamente.');
         } catch (error) {
             console.error('Error resolving:', error);
+            alert('Error al resolver la incidencia.');
+        } finally {
+            setSendingLog(false);
+        }
+    };
+
+    const handleClose = async () => {
+        if (!window.confirm('¿Está seguro de marcar esta incidencia como CERRADA (sin resolver)?')) return;
+        try {
+            setSendingLog(true);
+            const updated = await satService.updateIncident(
+                incident.id,
+                { status: 'closed', closed_at: new Date().toISOString() }
+            );
+            setIncident(updated);
+            alert('Incidencia cerrada.');
+        } catch (error) {
+            console.error('Error closing:', error);
+            alert('Error al cerrar la incidencia.');
+        } finally {
+            setSendingLog(false);
         }
     };
 
@@ -72,13 +97,24 @@ const IncidentDetail = ({ incidentId, onBack }) => {
                     <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{incident.id} • {new Date(incident.created_at).toLocaleString()}</span>
                 </div>
                 {incident.status !== 'resolved' && incident.status !== 'closed' && (
-                    <button
-                        onClick={handleResolve}
-                        className="btn"
-                        style={{ background: 'var(--primary)', color: 'white', border: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                    >
-                        <CheckCircle size={18} /> Resolver Incidencia
-                    </button>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button
+                            onClick={handleClose}
+                            className="btn"
+                            disabled={sendingLog}
+                            style={{ background: 'var(--text-muted)', color: 'white', border: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                        >
+                            Cerrar
+                        </button>
+                        <button
+                            onClick={handleResolve}
+                            className="btn"
+                            disabled={sendingLog}
+                            style={{ background: 'var(--primary)', color: 'white', border: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                        >
+                            <CheckCircle size={18} /> Resolver
+                        </button>
+                    </div>
                 )}
             </div>
 
@@ -92,7 +128,7 @@ const IncidentDetail = ({ incidentId, onBack }) => {
                     <div style={{ background: 'var(--bg-card)', padding: '1.5rem', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-sm)' }}>
                         <h3 style={{ marginTop: 0, marginBottom: '1rem', color: 'var(--text-main)', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>Registro de Actividad</h3>
                         <div style={{ maxHeight: '400px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            {incident.logs.map((log, index) => (
+                            {incident.logs?.map((log, index) => (
                                 <div key={index} style={{ padding: '1rem', background: 'var(--bg-offset)', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid var(--accent)' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                                         <strong>{log.author}</strong>

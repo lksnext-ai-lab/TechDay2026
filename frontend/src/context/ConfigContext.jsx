@@ -51,6 +51,17 @@ export const ConfigProvider = ({ children }) => {
         };
     });
 
+    // SAT Config
+    const [satConfig, setSatConfig] = useState(() => {
+        const saved = localStorage.getItem('lks_techday_sat_config');
+        if (saved) {
+            return JSON.parse(saved);
+        }
+        return {
+            siloId: ''
+        };
+    });
+
     // Save to localStorage whenever config changes
     useEffect(() => {
         localStorage.setItem('lks_techday_app_id', globalAppId);
@@ -64,12 +75,20 @@ export const ConfigProvider = ({ children }) => {
         localStorage.setItem('lks_techday_swarm_config', JSON.stringify(swarmConfig));
     }, [swarmConfig]);
 
+    useEffect(() => {
+        localStorage.setItem('lks_techday_sat_config', JSON.stringify(satConfig));
+    }, [satConfig]);
+
     const updateChatConfig = (newConfig) => {
         setChatConfig(prev => ({ ...prev, ...newConfig }));
     };
 
     const updateSwarmConfig = (newConfig) => {
         setSwarmConfig(prev => ({ ...prev, ...newConfig }));
+    };
+
+    const updateSatConfig = (newConfig) => {
+        setSatConfig(prev => ({ ...prev, ...newConfig }));
     };
 
     const value = {
@@ -79,7 +98,9 @@ export const ConfigProvider = ({ children }) => {
         chatConfig,
         updateChatConfig,
         swarmConfig,
-        updateSwarmConfig
+        updateSwarmConfig,
+        satConfig,
+        updateSatConfig
     };
 
     return (

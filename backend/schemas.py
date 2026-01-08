@@ -35,10 +35,12 @@ class IncidentUpdate(BaseModel):
     status: Optional[str] = None
     priority: Optional[str] = None
     closed_at: Optional[datetime] = None
+    mattin_id: Optional[str] = None
 
 class Incident(IncidentBase):
     created_at: datetime
     closed_at: Optional[datetime] = None
+    mattin_id: Optional[str] = None
     logs: List[IncidentLog] = []
 
     class Config:

@@ -7,12 +7,14 @@ const ConfigPage = () => {
     const {
         globalAppId, setGlobalAppId,
         chatConfig, updateChatConfig,
-        swarmConfig, updateSwarmConfig
+        swarmConfig, updateSwarmConfig,
+        satConfig, updateSatConfig
     } = useConfig();
 
     const [appIdInput, setAppIdInput] = useState(globalAppId);
     const [chatFormData, setChatFormData] = useState(chatConfig);
     const [swarmFormData, setSwarmFormData] = useState(swarmConfig);
+    const [satFormData, setSatFormData] = useState(satConfig);
 
     const [status, setStatus] = useState('');
     const [activeTab, setActiveTab] = useState('global');
@@ -34,6 +36,13 @@ const ConfigPage = () => {
     const handleSwarmSubmit = (e) => {
         e.preventDefault();
         updateSwarmConfig(swarmFormData);
+        setStatus('success');
+        setTimeout(() => setStatus(''), 2000);
+    };
+
+    const handleSatSubmit = (e) => {
+        e.preventDefault();
+        updateSatConfig(satFormData);
         setStatus('success');
         setTimeout(() => setStatus(''), 2000);
     };
@@ -270,7 +279,40 @@ const ConfigPage = () => {
                     </>
                 )}
 
-                {['audio', 'sat', 'ocr', 'sorteo'].includes(activeTab) && (
+                {activeTab === 'sat' && (
+                    <>
+                        <div style={{ marginBottom: '2rem', borderBottom: '1px solid #eee', paddingBottom: '1rem' }}>
+                            <h3 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-main)' }}>Módulo SAT (Soporte Técnico)</h3>
+                            <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                                Configuración para el auto-servicio de diagnóstico e indexado.
+                            </p>
+                        </div>
+
+                        <form onSubmit={handleSatSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--text-main)' }}>Silo ID (Mattin Knowledge Base)</label>
+                                <input
+                                    type="text"
+                                    value={satFormData.siloId}
+                                    onChange={(e) => setSatFormData({ ...satFormData, siloId: e.target.value })}
+                                    placeholder="ID del silo para indexar incidencias"
+                                    style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--accent)' }}
+                                />
+                                <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                    Las incidencias resueltas se indexarán automáticamente en este silo.
+                                </p>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '1rem' }}>
+                                {status === 'success' && <span style={{ color: 'green', fontSize: '0.9rem' }}>¡Guardado!</span>}
+                                <button type="submit" className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem' }}>
+                                    <Save size={18} /> Guardar Config SAT
+                                </button>
+                            </div>
+                        </form>
+                    </>
+                )}
+
+                {['audio', 'ocr', 'sorteo'].includes(activeTab) && (
                     <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
                         <p>Configuración para <strong>{tabs.find(t => t.id === activeTab)?.label}</strong> próximamente.</p>
                     </div>

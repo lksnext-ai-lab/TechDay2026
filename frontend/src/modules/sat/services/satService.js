@@ -23,13 +23,33 @@ export const satService = {
         return response.json();
     },
 
-    updateIncident: async (id, updates) => {
-        const response = await fetch(`${API_BASE_URL}/incidents/${id}`, {
+    updateIncident: async (id, updates, appId = null, siloId = null) => {
+        let url = `${API_BASE_URL}/incidents/${id}`;
+        const params = new URLSearchParams();
+        if (appId) params.append('app_id', appId);
+        if (siloId) params.append('silo_id', siloId);
+        if (params.toString()) url += `?${params.toString()}`;
+
+        const response = await fetch(url, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(updates),
         });
         if (!response.ok) throw new Error('Failed to update incident');
+        return response.json();
+    },
+
+    deleteIncident: async (id, appId = null, siloId = null) => {
+        let url = `${API_BASE_URL}/incidents/${id}`;
+        const params = new URLSearchParams();
+        if (appId) params.append('app_id', appId);
+        if (siloId) params.append('silo_id', siloId);
+        if (params.toString()) url += `?${params.toString()}`;
+
+        const response = await fetch(url, {
+            method: 'DELETE',
+        });
+        if (!response.ok) throw new Error('Failed to delete incident');
         return response.json();
     },
 

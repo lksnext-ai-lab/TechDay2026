@@ -28,6 +28,7 @@ class Incident(Base):
     reported_by = Column(String)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     closed_at = Column(DateTime(timezone=True), nullable=True)
+    mattin_id = Column(String, nullable=True)
 
     machine = relationship("Machine", back_populates="incidents")
     logs = relationship("IncidentLog", back_populates="incident", cascade="all, delete-orphan")

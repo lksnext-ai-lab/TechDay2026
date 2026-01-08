@@ -1,6 +1,6 @@
 import os
 import httpx
-from typing import List
+from typing import List, Optional
 from fastapi import FastAPI, Request, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
@@ -46,6 +46,59 @@ async def startup_event():
         print("API_KEY: NOT FOUND!")
     print("="*50)
 
+# --- MATTIN AI HELPERS ---
+
+async def index_with_mattin(app_id: int, silo_id: str, incident: models.Incident):
+    if not app_id or not silo_id:
+        print("DEBUG: Missing appId or siloId for Mattin indexing")
+        return None
+        
+    url = f"{MATTIN_URL}/public/v1/app/{app_id}/silos/silos/{silo_id}/docs/index"
+    headers = {"X-API-KEY": API_KEY, "Content-Type": "application/json"}
+    
+    # Combine content: description + all logs
+    logs_content = "\n".join([f"[{log.date}] {log.author}: {log.text}" for log in incident.logs])
+    content = f"INCIDENCIA: {incident.title}\nDESCRIPCIÓN: {incident.description}\n\nACTIVIDAD:\n{logs_content}"
+    
+    payload = {
+        "content": content,
+        "metadata": {
+            "tipo": incident.machine.type if incident.machine else "Desconocido",
+            "modelo": incident.machine.model if incident.machine else "Desconocido",
+            "incident_id": incident.id
+        }
+    }
+    
+    async with httpx.AsyncClient() as client:
+        try:
+            print(f"DEBUG: Indexing incident {incident.id} to Mattin...")
+            response = await client.post(url, headers=headers, json=payload)
+            response.raise_for_status()
+            res_data = response.json()
+            # The documentation says it returns an ID. Usually res_data["id"] 
+            # but we'll accept what the API returns.
+            return res_data.get("id")
+        except Exception as e:
+            print(f"ERROR INDEXING TO MATTIN: {str(e)}")
+            return None
+
+async def unindex_from_mattin(app_id: int, silo_id: str, mattin_id: str):
+    if not app_id or not silo_id or not mattin_id:
+        return
+        
+    url = f"{MATTIN_URL}/public/v1/app/{app_id}/silos/silos/{silo_id}/docs/delete"
+    headers = {"X-API-KEY": API_KEY, "Content-Type": "application/json"}
+    payload = {"ids": [mattin_id]}
+    
+    async with httpx.AsyncClient() as client:
+        try:
+            print(f"DEBUG: Unindexing doc {mattin_id} from Mattin...")
+            # httpx.request with body for DELETE
+            response = await client.request("DELETE", url, headers=headers, json=payload)
+            response.raise_for_status()
+        except Exception as e:
+            print(f"ERROR UNINDEXING FROM MATTIN: {str(e)}")
+
 # --- SAT MODULE ENDPOINTS ---
 
 @app.get("/api/sat/machines", response_model=List[schemas.Machine])
@@ -79,18 +132,40 @@ def create_incident(incident: schemas.IncidentCreate, db: Session = Depends(get_
     return db_incident
 
 @app.patch("/api/sat/incidents/{incident_id}", response_model=schemas.Incident)
-def update_incident(incident_id: str, updates: schemas.IncidentUpdate, db: Session = Depends(get_db)):
+async def update_incident(incident_id: str, updates: schemas.IncidentUpdate, app_id: Optional[int] = None, silo_id: Optional[str] = None, db: Session = Depends(get_db)):
     db_incident = db.query(models.Incident).filter(models.Incident.id == incident_id).first()
     if not db_incident:
         raise HTTPException(status_code=404, detail="Incident not found")
     
+    old_status = db_incident.status
     update_data = updates.dict(exclude_unset=True)
+    
     for key, value in update_data.items():
         setattr(db_incident, key, value)
+    
+    # Trigger indexing if status changed to 'resolved'
+    if old_status != "resolved" and db_incident.status == "resolved":
+        m_id = await index_with_mattin(app_id, silo_id, db_incident)
+        if m_id:
+            db_incident.mattin_id = m_id
     
     db.commit()
     db.refresh(db_incident)
     return db_incident
+
+@app.delete("/api/sat/incidents/{incident_id}")
+async def delete_incident(incident_id: str, app_id: Optional[int] = None, silo_id: Optional[str] = None, db: Session = Depends(get_db)):
+    db_incident = db.query(models.Incident).filter(models.Incident.id == incident_id).first()
+    if not db_incident:
+        raise HTTPException(status_code=404, detail="Incident not found")
+    
+    # Unindex if it was indexed
+    if db_incident.mattin_id:
+        await unindex_from_mattin(app_id, silo_id, db_incident.mattin_id)
+    
+    db.delete(db_incident)
+    db.commit()
+    return {"status": "success", "message": "Incident deleted"}
 
 @app.post("/api/sat/incidents/{incident_id}/logs", response_model=schemas.IncidentLog)
 def add_incident_log(incident_id: str, log: schemas.IncidentLogCreate, db: Session = Depends(get_db)):
@@ -98,6 +173,16 @@ def add_incident_log(incident_id: str, log: schemas.IncidentLogCreate, db: Sessi
     if not db_incident:
         raise HTTPException(status_code=404, detail="Incident not found")
     
+    # Transition status: open -> in_progress
+    if db_incident.status == "open":
+        db_incident.status = "in_progress"
+        db_log_status = models.IncidentLog(
+            incident_id=incident_id,
+            author="Sistema",
+            text="Estado cambiado a: EN PROCESO"
+        )
+        db.add(db_log_status)
+
     db_log = models.IncidentLog(incident_id=incident_id, **log.dict())
     db.add(db_log)
     db.commit()
