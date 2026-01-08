@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { MessageSquare, Wrench, FileText, Gift, ArrowRight, Settings } from 'lucide-react';
+import { MessageSquare, Wrench, FileText, Gift, ArrowRight, Settings, Mic } from 'lucide-react';
 
 const modules = [
     {
@@ -18,6 +18,14 @@ const modules = [
         icon: MessageSquare,
         path: '/chat',
         color: '#F85900'
+    },
+    {
+        id: 'audio',
+        title: 'Transcripción Audio',
+        description: 'Graba o sube audio para transcribir y analizar sentimientos.',
+        icon: Mic,
+        path: '/audio',
+        color: '#d63384'
     },
     {
         id: 'sat',

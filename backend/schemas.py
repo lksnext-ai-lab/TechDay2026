@@ -56,3 +56,20 @@ class MachineBase(BaseModel):
 class Machine(MachineBase):
     class Config:
         from_attributes = True
+
+# --- AUDIO MODULE SCHEMAS ---
+
+class TranscriptionBase(BaseModel):
+    filename: str
+    content: Optional[str] = None
+    sentiment: Optional[str] = None
+
+class TranscriptionCreate(TranscriptionBase):
+    pass
+
+class Transcription(TranscriptionBase):
+    id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

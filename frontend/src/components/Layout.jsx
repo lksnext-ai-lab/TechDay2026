@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Home, MessageSquare, Wrench, FileText, Gift } from 'lucide-react';
+import { Home, MessageSquare, Wrench, FileText, Gift, Mic } from 'lucide-react';
 
 const Layout = () => {
     const location = useLocation();
@@ -24,6 +24,7 @@ const Layout = () => {
                 {!isHome && (
                     <nav style={{ display: 'flex', gap: '1rem' }}>
                         <Link to="/chat" className="nav-link"><MessageSquare size={20} /></Link>
+                        <Link to="/audio" className="nav-link"><Mic size={20} /></Link>
                         <Link to="/sat" className="nav-link"><Wrench size={20} /></Link>
                         <Link to="/ocr" className="nav-link"><FileText size={20} /></Link>
                         <Link to="/sorteo" className="nav-link"><Gift size={20} /></Link>

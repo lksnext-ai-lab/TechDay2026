@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useConfig } from '../context/ConfigContext';
-import { Save, ArrowLeft, Settings, MessageSquare, Wrench, FileText, Gift } from 'lucide-react';
+import { Save, ArrowLeft, Settings, MessageSquare, Wrench, FileText, Gift, Mic } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const ConfigPage = () => {
@@ -48,6 +48,7 @@ const ConfigPage = () => {
         { id: 'global', label: 'Global', icon: Settings },
         { id: 'chat', label: 'Chat', icon: MessageSquare },
         { id: 'swarm', label: 'Swarm Room', icon: MessageSquare },
+        { id: 'audio', label: 'Audio', icon: Mic },
         { id: 'sat', label: 'SAT', icon: Wrench },
         { id: 'ocr', label: 'OCR', icon: FileText },
         { id: 'sorteo', label: 'Sorteo', icon: Gift },
@@ -269,7 +270,7 @@ const ConfigPage = () => {
                     </>
                 )}
 
-                {['sat', 'ocr', 'sorteo'].includes(activeTab) && (
+                {['audio', 'sat', 'ocr', 'sorteo'].includes(activeTab) && (
                     <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
                         <p>Configuración para <strong>{tabs.find(t => t.id === activeTab)?.label}</strong> próximamente.</p>
                     </div>

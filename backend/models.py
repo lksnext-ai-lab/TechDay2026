@@ -45,3 +45,12 @@ class IncidentLog(Base):
 
 # You can add other module's models here as needed, 
 # ensuring they are independent or properly related.
+
+class Transcription(Base):
+    __tablename__ = "transcriptions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    filename = Column(String, nullable=False)
+    content = Column(Text, nullable=True)
+    sentiment = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

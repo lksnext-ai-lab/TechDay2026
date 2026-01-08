@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from database import engine, Base, get_db
 import models
 import schemas
-from modules import swarm
+from modules import swarm, audio
 
 # Create tables (already managed by alembic, but good to have)
 # Base.metadata.create_all(bind=engine)
@@ -30,6 +30,7 @@ app.add_middleware(
 )
 
 app.include_router(swarm.router)
+app.include_router(audio.router)
 
 MATTIN_URL = os.getenv("MATTIN_URL", "https://aict-desa.lksnext.com")
 API_KEY = os.getenv("API_KEY")
