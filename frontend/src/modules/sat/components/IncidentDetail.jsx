@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Send, CheckCircle, Clock, User, AlertTriangle } from 'lucide-react';
 import { satService } from '../services/satService';
 import { useConfig } from '../../../context/ConfigContext';
+import SimilarIncidents from './SimilarIncidents';
 
 const IncidentDetail = ({ incidentId, onBack }) => {
     const { globalAppId, satConfig } = useConfig();
@@ -189,6 +190,9 @@ const IncidentDetail = ({ incidentId, onBack }) => {
                             </div>
                         </div>
                     </div>
+
+                    {/* Similar Incidents */}
+                    <SimilarIncidents incidentId={incident.id} machineType={incident.machine_id} />
                 </div>
             </div>
         </div>

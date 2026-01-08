@@ -61,5 +61,17 @@ export const satService = {
         });
         if (!response.ok) throw new Error('Failed to add log');
         return response.json();
+    },
+
+    getSimilarIncidents: async (incidentId, appId = null, siloId = null) => {
+        let url = `${API_BASE_URL}/incidents/${incidentId}/similar`;
+        const params = new URLSearchParams();
+        if (appId) params.append('app_id', appId);
+        if (siloId) params.append('silo_id', siloId);
+        if (params.toString()) url += `?${params.toString()}`;
+
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Failed to fetch similar incidents');
+        return response.json();
     }
 };
