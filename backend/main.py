@@ -1,9 +1,12 @@
 import os
 import httpx
 from typing import List, Optional
-from fastapi import FastAPI, Request, HTTPException, Depends
+from fastapi import FastAPI, Request, HTTPException, Depends, UploadFile, File
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+import shutil
+import glob
 from sqlalchemy.orm import Session
 
 from database import engine, Base, get_db
@@ -28,6 +31,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Ensure uploads directory exists
+UPLOADS_DIR = "uploads"
+if not os.path.exists(UPLOADS_DIR):
+    os.makedirs(UPLOADS_DIR)
+
+app.mount("/uploads", StaticFiles(directory=UPLOADS_DIR), name="uploads")
 
 app.include_router(swarm.router)
 app.include_router(audio.router)
@@ -133,7 +143,78 @@ async def search_mattin_incidents(app_id: int, silo_id: str, query: str, machine
 
 @app.get("/api/sat/machines", response_model=List[schemas.Machine])
 def get_machines(db: Session = Depends(get_db)):
-    return db.query(models.Machine).all()
+    return db.query(models.Machine).filter(models.Machine.available == True).all()
+
+@app.post("/api/sat/machines", response_model=schemas.Machine)
+def create_machine(machine: schemas.MachineCreate, db: Session = Depends(get_db)):
+    db_machine = models.Machine(**machine.dict())
+    try:
+        db.add(db_machine)
+        db.commit()
+        db.refresh(db_machine)
+        return db_machine
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.put("/api/sat/machines/{machine_id}", response_model=schemas.Machine)
+def update_machine(machine_id: str, machine: schemas.MachineUpdate, db: Session = Depends(get_db)):
+    db_machine = db.query(models.Machine).filter(models.Machine.id == machine_id).first()
+    if not db_machine:
+        raise HTTPException(status_code=404, detail="Machine not found")
+    
+    update_data = machine.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_machine, key, value)
+        
+    db.commit()
+    db.refresh(db_machine)
+    return db_machine
+
+@app.delete("/api/sat/machines/{machine_id}")
+def delete_machine(machine_id: str, db: Session = Depends(get_db)):
+    db_machine = db.query(models.Machine).filter(models.Machine.id == machine_id).first()
+    if not db_machine:
+        raise HTTPException(status_code=404, detail="Machine not found")
+        
+    db_machine.available = False
+    db.commit()
+    return {"status": "success", "message": "Machine marked as unavailable (deleted)"}
+
+@app.post("/api/sat/machines/{machine_id}/documents")
+async def upload_machine_document(machine_id: str, file: UploadFile = File(...)):
+    if not file.filename.lower().endswith('.pdf'):
+        raise HTTPException(status_code=400, detail="Only PDF files are allowed")
+
+    machine_dir = os.path.join(UPLOADS_DIR, "electrodomesticos", machine_id)
+    if not os.path.exists(machine_dir):
+        os.makedirs(machine_dir)
+
+    # Use original filename
+    filename = os.path.basename(file.filename)
+    file_path = os.path.join(machine_dir, filename)
+
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    return {"filename": filename, "url": f"/uploads/electrodomesticos/{machine_id}/{filename}"}
+
+@app.get("/api/sat/machines/{machine_id}/documents")
+def get_machine_documents(machine_id: str):
+    machine_dir = os.path.join(UPLOADS_DIR, "electrodomesticos", machine_id)
+    if not os.path.exists(machine_dir):
+        return []
+
+    documents = []
+    # List all PDFs
+    files = sorted(glob.glob(os.path.join(machine_dir, "*.pdf")))
+    for f in files:
+        filename = os.path.basename(f)
+        documents.append({
+            "filename": filename,
+            "url": f"/uploads/electrodomesticos/{machine_id}/{filename}"
+        })
+    return documents
 
 @app.get("/api/sat/incidents", response_model=List[schemas.Incident])
 def get_incidents(db: Session = Depends(get_db)):

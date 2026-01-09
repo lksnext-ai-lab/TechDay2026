@@ -4,15 +4,23 @@ import { Link } from 'react-router-dom';
 import CreateIncident from './components/CreateIncident';
 import ManageIncidents from './components/ManageIncidents';
 import IncidentDetail from './components/IncidentDetail';
+import ManageMachines from './components/ManageMachines';
+import MachineDetail from './components/MachineDetail';
 
 const Sat = () => {
     // view: 'dashboard', 'create', 'manage', 'detail'
     const [view, setView] = useState('dashboard');
     const [selectedIncidentId, setSelectedIncidentId] = useState(null);
+    const [selectedMachineId, setSelectedMachineId] = useState(null);
 
     const navigateToDetail = (id) => {
         setSelectedIncidentId(id);
         setView('detail');
+    };
+
+    const navigateToMachine = (mode, id = null) => {
+        setSelectedMachineId(id);
+        setView(mode === 'create' || mode === 'edit' ? 'machine_detail' : 'machines');
     };
 
     const renderDashboard = () => (
@@ -25,6 +33,15 @@ const Sat = () => {
                     <h2 style={{ margin: 0, color: 'var(--text-main)' }}>Centro de Soporte Técnico</h2>
                     <p style={{ color: 'var(--text-muted)', margin: 0 }}>Gestión de incidencias de electrodomésticos.</p>
                 </div>
+                <div style={{ flex: 1 }}></div>
+                <button
+                    onClick={() => setView('machines')}
+                    className="btn-ghost"
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)' }}
+                >
+                    <Database size={18} />
+                    <span>Modelos</span>
+                </button>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '2rem', marginTop: '3rem' }}>
@@ -79,15 +96,18 @@ const Sat = () => {
                     <h3 style={{ margin: 0, color: 'var(--text-main)' }}>Gestionar Incidencias</h3>
                     <p style={{ margin: 0, color: 'var(--text-muted)' }}>Ver estado y responder tickets.</p>
                 </div>
+
             </div>
         </div>
     );
 
     return (
-        <div className="container" style={{ padding: '2rem 1rem', maxWidth: '1000px' }}>
+        <div className="container" style={{ padding: '2rem 1rem', maxWidth: '1200px' }}>
             {view === 'dashboard' && renderDashboard()}
             {view === 'create' && <CreateIncident onBack={() => setView('dashboard')} onCreated={() => setView('manage')} />}
             {view === 'manage' && <ManageIncidents onBack={() => setView('dashboard')} onSelectIncident={navigateToDetail} />}
+            {view === 'machines' && <ManageMachines onBack={() => setView('dashboard')} onNavigate={navigateToMachine} />}
+            {view === 'machine_detail' && <MachineDetail machineId={selectedMachineId} onBack={() => setView('machines')} />}
             {view === 'detail' && <IncidentDetail incidentId={selectedIncidentId} onBack={() => setView('manage')} />}
 
             <style>{`

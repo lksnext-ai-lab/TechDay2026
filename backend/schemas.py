@@ -55,6 +55,17 @@ class MachineBase(BaseModel):
     location: Optional[str] = None
     available: bool = True
 
+class MachineCreate(MachineBase):
+    pass
+
+class MachineUpdate(BaseModel):
+    type: Optional[str] = None
+    brand: Optional[str] = None
+    model: Optional[str] = None
+    serial: Optional[str] = None
+    location: Optional[str] = None
+    available: Optional[bool] = None
+
 class Machine(MachineBase):
     class Config:
         from_attributes = True
