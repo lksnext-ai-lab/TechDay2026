@@ -52,6 +52,34 @@ export const satService = {
         return response.json();
     },
 
+    deleteMachineDocument: async (id, filename, appId, siloId) => {
+        let url = `${API_BASE_URL}/machines/${id}/documents/${filename}`;
+        const params = new URLSearchParams();
+        if (appId) params.append('app_id', appId);
+        if (siloId) params.append('silo_id', siloId);
+        if (params.toString()) url += `?${params.toString()}`;
+
+        const response = await fetch(url, {
+            method: 'DELETE',
+        });
+        if (!response.ok) throw new Error('Failed to delete document');
+        return response.json();
+    },
+
+    indexMachineDocument: async (id, filename, appId, siloId) => {
+        let url = `${API_BASE_URL}/machines/${id}/documents/${filename}/index`;
+        const params = new URLSearchParams();
+        if (appId) params.append('app_id', appId);
+        if (siloId) params.append('silo_id', siloId);
+        if (params.toString()) url += `?${params.toString()}`;
+
+        const response = await fetch(url, {
+            method: 'POST',
+        });
+        if (!response.ok) throw new Error('Failed to index document');
+        return response.json();
+    },
+
     getIncidents: async () => {
         const response = await fetch(`${API_BASE_URL}/incidents`);
         if (!response.ok) throw new Error('Failed to fetch incidents');

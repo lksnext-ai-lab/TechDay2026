@@ -1,7 +1,7 @@
 import os
 import httpx
 from typing import List, Optional
-from fastapi import FastAPI, Request, HTTPException, Depends, UploadFile, File
+from fastapi import FastAPI, Request, HTTPException, Depends, UploadFile, File, Query
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
@@ -139,6 +139,71 @@ async def search_mattin_incidents(app_id: int, silo_id: str, query: str, machine
             print(f"ERROR SEARCHING MATTIN: {str(e)}")
             return []
 
+async def unindex_mattin_doc(app_id: int, silo_id: str, metadata: dict):
+    """
+    Unindexes documents from Mattin based on metadata filter.
+    URL: /public/v1/app/{app_id}/silos/silos/{silo_id}/docs/delete-by-metadata
+    """
+    if not app_id or not silo_id or not metadata:
+        return
+        
+    url = f"{MATTIN_URL}/public/v1/app/{app_id}/silos/silos/{silo_id}/docs/delete-by-metadata"
+    headers = {"X-API-KEY": API_KEY, "Content-Type": "application/json"}
+    
+    payload = {
+        "filter_metadata": metadata
+    }
+    
+    async with httpx.AsyncClient() as client:
+        try:
+            print(f"DEBUG: Unindexing from Mattin: {metadata}")
+            # delete-by-metadata expects DELETE method
+            response = await client.request("DELETE", url, headers=headers, json=payload)
+            response.raise_for_status()
+            print("DEBUG: Unindexing success")
+        except Exception as e:
+            print(f"ERROR UNINDEXING DOC: {str(e)}")
+
+async def index_mattin_doc(app_id: int, silo_id: str, file_path: str, metadata: dict):
+    """
+    Indexes a file to Mattin.
+    URL: /public/v1/app/{app_id}/silos/silos/{silo_id}/docs/index-file
+    """
+    if not app_id or not silo_id or not os.path.exists(file_path):
+        return
+        
+    # First unindex to ensure clean state
+    await unindex_mattin_doc(app_id, silo_id, metadata)
+    
+    url = f"{MATTIN_URL}/public/v1/app/{app_id}/silos/silos/{silo_id}/docs/index-file"
+    headers = {"X-API-KEY": API_KEY}
+    
+    # Multipart form data
+    # file * string($binary)
+    # metadata string (json string)
+    
+    import json
+    
+    async with httpx.AsyncClient() as client:
+        try:
+            print(f"DEBUG: Indexing to Mattin: {file_path} with meta {metadata}")
+            
+            with open(file_path, "rb") as f:
+                files = {
+                    "file": (os.path.basename(file_path), f, "application/pdf")
+                }
+                data = {
+                    "metadata": json.dumps(metadata)
+                }
+                
+                response = await client.post(url, headers=headers, files=files, data=data)
+                response.raise_for_status()
+                print("DEBUG: Indexing success")
+                
+        except Exception as e:
+            print(f"ERROR INDEXING DOC: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Error indexing document: {str(e)}")
+
 # --- SAT MODULE ENDPOINTS ---
 
 @app.get("/api/sat/machines", response_model=List[schemas.Machine])
@@ -215,6 +280,67 @@ def get_machine_documents(machine_id: str):
             "url": f"/uploads/electrodomesticos/{machine_id}/{filename}"
         })
     return documents
+@app.post("/api/sat/machines/{machine_id}/documents/{filename}/index")
+async def index_machine_document(
+    machine_id: str, 
+    filename: str, 
+    app_id: int = Query(...), 
+    silo_id: str = Query(...),
+    db: Session = Depends(get_db)
+):
+    # Verify machine exists
+    machine = db.query(models.Machine).filter(models.Machine.id == machine_id).first()
+    if not machine:
+        raise HTTPException(status_code=404, detail="Machine not found")
+        
+    machine_dir = os.path.join(UPLOADS_DIR, "electrodomesticos", machine_id)
+    file_path = os.path.join(machine_dir, filename)
+    
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Document not found")
+        
+    metadata = {
+        "tipo": machine.type,
+        "modelo": machine.model,
+        "nombre": filename
+    }
+    
+    await index_mattin_doc(app_id, silo_id, file_path, metadata)
+    
+    return {"status": "success", "message": "Document indexed"}
+
+@app.delete("/api/sat/machines/{machine_id}/documents/{filename}")
+async def delete_machine_document(
+    machine_id: str, 
+    filename: str,
+    app_id: int = Query(None), 
+    silo_id: str = Query(None),
+    db: Session = Depends(get_db)
+):
+    machine_dir = os.path.join(UPLOADS_DIR, "electrodomesticos", machine_id)
+    file_path = os.path.join(machine_dir, filename)
+    
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Document not found")
+        
+    # Unindex if app_id/silo_id provided
+    if app_id and silo_id:
+        machine = db.query(models.Machine).filter(models.Machine.id == machine_id).first()
+        if machine:
+            metadata = {
+                "tipo": machine.type,
+                "modelo": machine.model,
+                "nombre": filename
+            }
+            await unindex_mattin_doc(app_id, silo_id, metadata)
+    
+    # Delete file
+    try:
+        os.remove(file_path)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error deleting file: {str(e)}")
+        
+    return {"status": "success", "message": "Document deleted"}
 
 @app.get("/api/sat/incidents", response_model=List[schemas.Incident])
 def get_incidents(db: Session = Depends(get_db)):

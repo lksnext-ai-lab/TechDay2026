@@ -58,7 +58,8 @@ export const ConfigProvider = ({ children }) => {
             return JSON.parse(saved);
         }
         return {
-            siloId: ''
+            siloId: '',
+            docsSiloId: ''
         };
     });
 

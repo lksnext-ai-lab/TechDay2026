@@ -302,6 +302,19 @@ const ConfigPage = () => {
                                     Las incidencias resueltas se indexarán automáticamente en este silo.
                                 </p>
                             </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--text-main)' }}>Silo ID (Documentación)</label>
+                                <input
+                                    type="text"
+                                    value={satFormData.docsSiloId || ''}
+                                    onChange={(e) => setSatFormData({ ...satFormData, docsSiloId: e.target.value })}
+                                    placeholder="ID del silo para documentación"
+                                    style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--accent)' }}
+                                />
+                                <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                    Los manuales se indexarán en este silo para la búsqueda.
+                                </p>
+                            </div>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '1rem' }}>
                                 {status === 'success' && <span style={{ color: 'green', fontSize: '0.9rem' }}>¡Guardado!</span>}
                                 <button type="submit" className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem' }}>
@@ -318,7 +331,7 @@ const ConfigPage = () => {
                     </div>
                 )}
             </div>
-        </div>
+        </div >
     );
 };
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Save, Upload, FileText, Download } from 'lucide-react';
+import { ArrowLeft, Save, Upload, FileText, Download, Trash2 } from 'lucide-react';
 import { satService, API_BASE_URL } from '../services/satService';
+import { useConfig } from '../../../context/ConfigContext';
 
 const MachineDetail = ({ machineId, onBack }) => {
     const [formData, setFormData] = useState({
@@ -9,10 +10,11 @@ const MachineDetail = ({ machineId, onBack }) => {
         brand: '',
         model: '',
         serial: '',
-        location: '',
         available: true
     });
+    const { globalAppId, satConfig } = useConfig();
     const [documents, setDocuments] = useState([]);
+    const [actionStatus, setActionStatus] = useState(null); // { type: 'success'|'error'|'loading', message: '' }
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [uploading, setUploading] = useState(false);
@@ -271,12 +273,30 @@ const MachineDetail = ({ machineId, onBack }) => {
                                     </div>
 
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                        {documents.length === 0 && (
+                                        {actionStatus && (
+                                            <div style={{
+                                                padding: '0.75rem',
+                                                borderRadius: 'var(--radius-sm)',
+                                                background: actionStatus.type === 'error' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                                                color: actionStatus.type === 'error' ? '#ef4444' : '#10b981',
+                                                border: `1px solid ${actionStatus.type === 'error' ? '#ef4444' : '#10b981'}`,
+                                                fontSize: '0.9rem',
+                                                marginBottom: '0.5rem',
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'center'
+                                            }}>
+                                                <span>{actionStatus.message}</span>
+                                                <button onClick={() => setActionStatus(null)} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', fontSize: '1.2rem' }}>&times;</button>
+                                            </div>
+                                        )}
+
+                                        {(!documents || documents.length === 0) && (
                                             <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)', border: '1px dashed var(--border)', borderRadius: 'var(--radius-sm)' }}>
                                                 No hay documentos adjuntos.
                                             </div>
                                         )}
-                                        {documents.map((doc, index) => (
+                                        {documents && documents.map((doc, index) => (
                                             <div key={index} style={{
                                                 display: 'flex',
                                                 alignItems: 'center',
@@ -290,16 +310,57 @@ const MachineDetail = ({ machineId, onBack }) => {
                                                     <FileText size={18} color="var(--primary)" />
                                                     <span style={{ color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{doc.filename}</span>
                                                 </div>
-                                                <a
-                                                    href={`${API_BASE_URL.replace('/api/sat', '')}${doc.url}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="btn-ghost"
-                                                    style={{ padding: '0.25rem' }}
-                                                    title="Descargar"
-                                                >
-                                                    <Download size={16} color="var(--text-muted)" />
-                                                </a>
+                                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                    <a
+                                                        href={`${API_BASE_URL.replace('/api/sat', '')}${doc.url}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="btn-ghost"
+                                                        style={{ padding: '0.25rem' }}
+                                                        title="Descargar"
+                                                    >
+                                                        <Download size={16} color="var(--text-muted)" />
+                                                    </a>
+                                                    {satConfig.docsSiloId && globalAppId && (
+                                                        <button
+                                                            onClick={async () => {
+                                                                setActionStatus({ type: 'loading', message: 'Indexando...' });
+                                                                try {
+                                                                    console.log(`Indexing doc ${doc.filename} to silo ${satConfig.docsSiloId} app ${globalAppId}`);
+                                                                    await satService.indexMachineDocument(machineId, doc.filename, globalAppId, satConfig.docsSiloId);
+                                                                    setActionStatus({ type: 'success', message: 'Documento indexado correctamente' });
+                                                                } catch (e) {
+                                                                    console.error(e);
+                                                                    setActionStatus({ type: 'error', message: 'Error al indexar en Mattin' });
+                                                                }
+                                                            }}
+                                                            className="btn-ghost"
+                                                            style={{ padding: '0.25rem' }}
+                                                            title="Indexar en Mattin"
+                                                        >
+                                                            <Upload size={16} color="var(--primary)" />
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        onClick={async () => {
+                                                            setActionStatus({ type: 'loading', message: 'Eliminando...' });
+                                                            try {
+                                                                console.log(`Deleting doc ${doc.filename} from silo ${satConfig.docsSiloId} app ${globalAppId}`);
+                                                                await satService.deleteMachineDocument(machineId, doc.filename, globalAppId, satConfig.docsSiloId);
+                                                                await loadDocuments();
+                                                                setActionStatus({ type: 'success', message: 'Documento eliminado' });
+                                                            } catch (e) {
+                                                                console.error(e);
+                                                                setActionStatus({ type: 'error', message: 'Error al eliminar el documento' });
+                                                            }
+                                                        }}
+                                                        className="btn-ghost"
+                                                        style={{ padding: '0.25rem' }}
+                                                        title="Eliminar"
+                                                    >
+                                                        <Trash2 size={16} color="var(--destructive)" />
+                                                    </button>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
