@@ -63,6 +63,7 @@ async def index_with_mattin(app_id: int, silo_id: str, incident: models.Incident
     payload = {
         "content": content,
         "metadata": {
+            "title": incident.title,
             "tipo": incident.machine.type if incident.machine else "Desconocido",
             "modelo": incident.machine.model if incident.machine else "Desconocido",
             "incident_id": incident.id
@@ -98,6 +99,35 @@ async def unindex_from_mattin(app_id: int, silo_id: str, mattin_id: str):
             response.raise_for_status()
         except Exception as e:
             print(f"ERROR UNINDEXING FROM MATTIN: {str(e)}")
+
+async def search_mattin_incidents(app_id: int, silo_id: str, query: str, machine_type: str = None, k: int = 4):
+    if not app_id or not silo_id:
+        return []
+        
+    url = f"{MATTIN_URL}/public/v1/app/{app_id}/silos/silos/{silo_id}/docs/find"
+    headers = {"X-API-KEY": API_KEY, "Content-Type": "application/json"}
+    
+    payload = {
+        "query": query,
+        "k": k
+    }
+    
+    if machine_type:
+        payload["filter_metadata"] = {
+             "tipo": machine_type
+        }
+        
+    async with httpx.AsyncClient() as client:
+        try:
+            print(f"DEBUG: Searching Mattin with query: {query[:50]}...")
+            response = await client.post(url, headers=headers, json=payload)
+            response.raise_for_status()
+            data = response.json()
+            # print(f"DEBUG: Search response: {data}")
+            return data.get("docs", [])
+        except Exception as e:
+            print(f"ERROR SEARCHING MATTIN: {str(e)}")
+            return []
 
 # --- SAT MODULE ENDPOINTS ---
 
@@ -166,6 +196,47 @@ async def delete_incident(incident_id: str, app_id: Optional[int] = None, silo_i
     db.delete(db_incident)
     db.commit()
     return {"status": "success", "message": "Incident deleted"}
+
+@app.get("/api/sat/incidents/{incident_id}/similar")
+async def get_similar_incidents(incident_id: str, app_id: Optional[int] = None, silo_id: Optional[str] = None, db: Session = Depends(get_db)):
+    db_incident = db.query(models.Incident).filter(models.Incident.id == incident_id).first()
+    if not db_incident:
+        raise HTTPException(status_code=404, detail="Incident not found")
+        
+    query_text = f"{db_incident.title}\n{db_incident.description}"
+    machine_type = db_incident.machine.type if db_incident.machine else None
+    
+    similar_docs = await search_mattin_incidents(app_id, silo_id, query_text, machine_type)
+    
+    # Extract IDs and map to scores
+    similar_map = {}
+    for doc in similar_docs:
+        meta = doc.get("metadata", {})
+        inc_id = meta.get("incident_id")
+        if inc_id and inc_id != incident_id:
+            similar_map[inc_id] = doc.get("score", 0)
+            
+    if not similar_map:
+        return []
+
+    # Fetch full details from DB
+    similar_db_incidents = db.query(models.Incident).filter(models.Incident.id.in_(similar_map.keys())).all()
+    
+    results = []
+    for inc in similar_db_incidents:
+        results.append({
+            "id": inc.id,
+            "title": inc.title,
+            "description": inc.description,
+            "logs": [{"author": log.author, "date": log.date, "text": log.text} for log in inc.logs],
+            "similarity": similar_map.get(inc.id, 0),
+            "metadata": {"modelo": inc.machine.model if inc.machine else "Desconocido"}
+        })
+        
+    # Sort by similarity desc
+    results.sort(key=lambda x: x["similarity"], reverse=True)
+        
+    return results
 
 @app.post("/api/sat/incidents/{incident_id}/logs", response_model=schemas.IncidentLog)
 def add_incident_log(incident_id: str, log: schemas.IncidentLogCreate, db: Session = Depends(get_db)):
