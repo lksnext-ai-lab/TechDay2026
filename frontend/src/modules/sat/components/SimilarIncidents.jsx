@@ -1,36 +1,119 @@
 import React, { useState, useEffect } from 'react';
-import { satService } from '../services/satService';
+import { satService, API_BASE_URL } from '../services/satService';
 import { useConfig } from '../../../context/ConfigContext';
-import { Lightbulb, ExternalLink, X } from 'lucide-react';
+import { Lightbulb, ExternalLink, X, BookOpen, FileText } from 'lucide-react';
 
 const SimilarIncidents = ({ incidentId, machineType }) => {
     const { globalAppId, satConfig } = useConfig();
     const [similar, setSimilar] = useState([]);
+    const [knowledge, setKnowledge] = useState([]);
     const [loading, setLoading] = useState(false);
     const [selectedIncident, setSelectedIncident] = useState(null);
 
     useEffect(() => {
-        if (incidentId && satConfig.siloId) {
-            loadSimilar();
+        if (incidentId) {
+            loadData();
         }
-    }, [incidentId, satConfig.siloId]);
+    }, [incidentId, satConfig.siloId, satConfig.docsSiloId]);
 
-    const loadSimilar = async () => {
+    const loadData = async () => {
         setLoading(true);
         try {
-            const data = await satService.getSimilarIncidents(incidentId, globalAppId, satConfig.siloId);
-            setSimilar(data);
+            const promises = [];
+
+            if (satConfig.siloId) {
+                promises.push(satService.getSimilarIncidents(incidentId, globalAppId, satConfig.siloId)
+                    .then(data => setSimilar(data))
+                    .catch(e => console.error("Error similar:", e)));
+            }
+
+            if (satConfig.docsSiloId) {
+                promises.push(satService.getKnowledgeBase(incidentId, globalAppId, satConfig.docsSiloId)
+                    .then(data => setKnowledge(data))
+                    .catch(e => console.error("Error knowledge:", e)));
+            }
+
+            await Promise.all(promises);
         } catch (error) {
-            console.error("Error fetching similar incidents:", error);
+            console.error("Error fetching data:", error);
         } finally {
             setLoading(false);
         }
     };
 
-    if (!satConfig.siloId) return null;
-
     return (
-        <>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            {/* Knowledge Base Section */}
+            <div style={{ background: 'var(--bg-card)', padding: '1.5rem', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-sm)' }}>
+                <h3 style={{ marginTop: 0, marginBottom: '1rem', color: 'var(--text-main)', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <BookOpen size={20} color="var(--primary)" />
+                    Documentación Técnica
+                </h3>
+
+                {loading ? (
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Buscando manuales...</div>
+                ) : knowledge.length === 0 ? (
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No se encontró documentación relevante.</div>
+                ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        {Object.entries(knowledge.reduce((acc, doc) => {
+                            if (!acc[doc.filename]) acc[doc.filename] = { machine_id: doc.machine_id, pages: [] };
+                            if (!acc[doc.filename].pages.find(p => p.page === doc.page)) {
+                                acc[doc.filename].pages.push(doc);
+                            }
+                            return acc;
+                        }, {})).map(([filename, group], gIndex) => (
+                            <div key={gIndex} style={{
+                                padding: '0.5rem 0.75rem',
+                                background: 'white',
+                                border: '1px solid var(--border)',
+                                borderRadius: 'var(--radius-sm)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '1rem',
+                                flexWrap: 'wrap'
+                            }}>
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.4rem',
+                                    color: 'var(--text-main)',
+                                    fontWeight: 'bold',
+                                    fontSize: '0.85rem'
+                                }}>
+                                    <FileText size={14} color="var(--primary)" />
+                                    {filename}
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Págs:</span>
+                                    {group.pages.sort((a, b) => (a.page || 0) - (b.page || 0)).map((pageDoc, pIndex) => (
+                                        <a
+                                            key={pIndex}
+                                            href={`${API_BASE_URL.replace('/api/sat', '')}/uploads/electrodomesticos/${pageDoc.machine_id}/${pageDoc.filename}${pageDoc.page ? `#page=${pageDoc.page}` : ''}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            style={{
+                                                fontSize: '0.8rem',
+                                                padding: '0.1rem 0.4rem',
+                                                background: 'var(--primary-light)',
+                                                color: 'var(--primary)',
+                                                borderRadius: '3px',
+                                                fontWeight: '600',
+                                                textDecoration: 'none'
+                                            }}
+                                            title={`Abrir página ${pageDoc.page || 's/n'}`}
+                                        >
+                                            {pageDoc.page || 's/n'}
+                                        </a>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            {/* Similar Incidents Section */}
             <div style={{ background: 'var(--bg-card)', padding: '1.5rem', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-sm)' }}>
                 <h3 style={{ marginTop: 0, marginBottom: '1rem', color: 'var(--text-main)', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <Lightbulb size={20} color="var(--primary)" />
@@ -38,7 +121,7 @@ const SimilarIncidents = ({ incidentId, machineType }) => {
                 </h3>
 
                 {loading ? (
-                    <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Buscando soluciones similares...</div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Buscando soluciones...</div>
                 ) : similar.length === 0 ? (
                     <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No se encontraron incidencias similares.</div>
                 ) : (
@@ -140,7 +223,7 @@ const SimilarIncidents = ({ incidentId, machineType }) => {
                     </div>
                 </div>
             )}
-        </>
+        </div>
     );
 };
 

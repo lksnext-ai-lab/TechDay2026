@@ -146,5 +146,17 @@ export const satService = {
         const response = await fetch(url);
         if (!response.ok) throw new Error('Failed to fetch similar incidents');
         return response.json();
+    },
+
+    getKnowledgeBase: async (incidentId, appId = null, siloId = null) => {
+        let url = `${API_BASE_URL}/incidents/${incidentId}/knowledge`;
+        const params = new URLSearchParams();
+        if (appId) params.append('app_id', appId);
+        if (siloId) params.append('silo_id', siloId);
+        if (params.toString()) url += `?${params.toString()}`;
+
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Failed to fetch knowledge base');
+        return response.json();
     }
 };

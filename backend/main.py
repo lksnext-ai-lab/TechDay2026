@@ -136,7 +136,44 @@ async def search_mattin_incidents(app_id: int, silo_id: str, query: str, machine
             # print(f"DEBUG: Search response: {data}")
             return data.get("docs", [])
         except Exception as e:
-            print(f"ERROR SEARCHING MATTIN: {str(e)}")
+            print(f"ERROR SEARCHING MATTIN INCIDENTS: {str(e)}")
+            return []
+
+async def search_mattin_docs(app_id: int, silo_id: str, query: str, machine_type: str = None, machine_model: str = None, k: int = 5):
+    """
+    Searches the document silo for relevant chunks.
+    """
+    if not app_id or not silo_id:
+        print("DEBUG: Missing app_id or silo_id for doc search")
+        return []
+        
+    url = f"{MATTIN_URL}/public/v1/app/{app_id}/silos/silos/{silo_id}/docs/find"
+    headers = {"X-API-KEY": API_KEY, "Content-Type": "application/json"}
+    
+    payload = {
+        "query": query,
+        "k": k
+    }
+    
+    # Filter by machine type and model if available
+    filters = {}
+    if machine_type:
+        filters["tipo"] = machine_type
+    if machine_model:
+        filters["modelo"] = machine_model
+        
+    if filters:
+        payload["filter_metadata"] = filters
+        
+    async with httpx.AsyncClient() as client:
+        try:
+            print(f"DEBUG: Searching Mattin Docs with query: {query[:50]}... Filters: {filters}")
+            response = await client.post(url, headers=headers, json=payload)
+            response.raise_for_status()
+            data = response.json()
+            return data.get("docs", [])
+        except Exception as e:
+            print(f"ERROR SEARCHING MATTIN DOCS: {str(e)}")
             return []
 
 async def unindex_mattin_doc(app_id: int, silo_id: str, metadata: dict):
@@ -442,6 +479,36 @@ async def get_similar_incidents(incident_id: str, app_id: Optional[int] = None, 
         
     # Sort by similarity desc
     results.sort(key=lambda x: x["similarity"], reverse=True)
+        
+    return results
+
+@app.get("/api/sat/incidents/{incident_id}/knowledge")
+async def get_incident_knowledge(incident_id: str, app_id: Optional[int] = None, silo_id: Optional[str] = None, db: Session = Depends(get_db)):
+    db_incident = db.query(models.Incident).filter(models.Incident.id == incident_id).first()
+    if not db_incident:
+        raise HTTPException(status_code=404, detail="Incident not found")
+        
+    query_text = f"{db_incident.title}\n{db_incident.description}"
+    machine_type = db_incident.machine.type if db_incident.machine else None
+    machine_model = db_incident.machine.model if db_incident.machine else None
+    
+    # We use the provided silo_id (which should be the docsSiloId from frontend)
+    knowledge_docs = await search_mattin_docs(app_id, silo_id, query_text, machine_type, machine_model, k=5)
+    # Ensure only top 5 results are returned
+    knowledge_docs = knowledge_docs[:5]
+    
+    results = []
+    for doc in knowledge_docs:
+        meta = doc.get("metadata", {})
+        results.append({
+            "content": doc.get("content", ""),
+            "score": doc.get("score", 0),
+            "filename": meta.get("nombre", "Documento"),
+            "page": meta.get("page"),
+            "total_pages": meta.get("total_pages"),
+            "machine_model": meta.get("modelo"),
+            "machine_id": db_incident.machine_id
+        })
         
     return results
 
