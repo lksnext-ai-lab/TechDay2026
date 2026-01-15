@@ -249,6 +249,9 @@ def get_machines(db: Session = Depends(get_db)):
 
 @app.post("/api/sat/machines", response_model=schemas.Machine)
 def create_machine(machine: schemas.MachineCreate, db: Session = Depends(get_db)):
+    if not machine.id or not machine.id.strip():
+        raise HTTPException(status_code=400, detail="El ID del modelo no puede estar vacío.")
+        
     db_machine = models.Machine(**machine.dict())
     try:
         db.add(db_machine)

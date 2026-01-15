@@ -88,6 +88,11 @@ const MachineDetail = ({ machineId, onBack }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSaving(true);
+        if (!formData.id || !formData.id.trim()) {
+            alert('El ID del modelo es obligatorio.');
+            setSaving(false);
+            return;
+        }
         try {
             if (isEditing) {
                 await satService.updateMachine(machineId, formData);

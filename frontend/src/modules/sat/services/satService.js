@@ -28,6 +28,7 @@ export const satService = {
     },
 
     deleteMachine: async (id) => {
+        if (!id) throw new Error('Cannot delete machine without a valid ID');
         const response = await fetch(`${API_BASE_URL}/machines/${id}`, {
             method: 'DELETE',
         });
