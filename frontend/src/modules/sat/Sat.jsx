@@ -6,6 +6,7 @@ import ManageIncidents from './components/ManageIncidents';
 import IncidentDetail from './components/IncidentDetail';
 import ManageMachines from './components/ManageMachines';
 import MachineDetail from './components/MachineDetail';
+import CallCenterAgent from './components/CallCenterAgent';
 
 const Sat = () => {
     // view: 'dashboard', 'create', 'manage', 'detail'
@@ -98,6 +99,35 @@ const Sat = () => {
                 </div>
 
             </div>
+
+            <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'center' }}>
+                {/* Call Center Agent Card - Full Width or Centered */}
+                <div
+                    onClick={() => setView('call_center')}
+                    className="card-hover"
+                    style={{
+                        background: 'var(--bg-card)',
+                        padding: '2rem',
+                        borderRadius: 'var(--radius-md)',
+                        boxShadow: 'var(--shadow-md)',
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '1rem',
+                        transition: 'transform 0.2s',
+                        borderTop: '5px solid #25D366', // WhatsApp-like green or distinct agent color
+                        minWidth: '300px'
+                    }}
+                >
+                    <div style={{ background: 'var(--bg-offset)', padding: '1rem', borderRadius: '50%' }}>
+                        <Activity size={32} color="#25D366" />
+                    </div>
+                    <h3 style={{ margin: 0, color: 'var(--text-main)' }}>Call Center Agent</h3>
+                    <p style={{ margin: 0, color: 'var(--text-muted)' }}>Asistente IA para creación de incidencias.</p>
+                </div>
+            </div>
         </div>
     );
 
@@ -109,6 +139,7 @@ const Sat = () => {
             {view === 'machines' && <ManageMachines onBack={() => setView('dashboard')} onNavigate={navigateToMachine} />}
             {view === 'machine_detail' && <MachineDetail machineId={selectedMachineId} onBack={() => setView('machines')} />}
             {view === 'detail' && <IncidentDetail incidentId={selectedIncidentId} onBack={() => setView('manage')} />}
+            {view === 'call_center' && <CallCenterAgent onBack={() => setView('dashboard')} />}
 
             <style>{`
                 .card-hover:hover { transform: translateY(-5px); box-shadow: var(--shadow-lg) !important; }

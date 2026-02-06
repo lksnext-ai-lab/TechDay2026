@@ -5,7 +5,7 @@ import Home from './pages/Home';
 import Chat from './modules/chat/Chat';
 import Sat from './modules/sat/Sat';
 import Ocr from './modules/ocr/Ocr';
-import Sorteo from './modules/sorteo/Sorteo';
+
 import { ConfigProvider } from './context/ConfigContext';
 import ConfigPage from './pages/ConfigPage';
 import SwarmModule from './modules/swarm/SwarmModule';
@@ -23,7 +23,7 @@ function App() {
             <Route path="ocr" element={<Ocr />} />
             <Route path="swarm" element={<SwarmModule />} />
             <Route path="audio" element={<AudioModule />} />
-            <Route path="sorteo" element={<Sorteo />} />
+
           </Route>
           <Route path="/config" element={<ConfigPage />} />
         </Routes>

@@ -1,16 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { MessageSquare, Wrench, FileText, Gift, ArrowRight, Settings, Mic } from 'lucide-react';
+import { MessageSquare, Wrench, FileText, ArrowRight, Settings, Mic } from 'lucide-react';
+import { useConfig } from '../context/ConfigContext';
 
 const modules = [
-    {
-        id: 'swarm',
-        title: 'Sala de Brainstorming',
-        description: 'Observa a un equipo de IAs debatiendo y resolviendo retos en tiempo real.',
-        icon: MessageSquare,
-        path: '/swarm',
-        color: '#1a4b8c'
-    },
     {
         id: 'chat',
         title: 'Asistente IA',
@@ -28,14 +21,6 @@ const modules = [
         color: '#d63384'
     },
     {
-        id: 'sat',
-        title: 'Soporte Técnico',
-        description: 'Simulación de proceso de asistencia técnica inteligente.',
-        icon: Wrench,
-        path: '/sat',
-        color: '#003366'
-    },
-    {
         id: 'ocr',
         title: 'Digitalización OCR',
         description: 'Captura y digitaliza documentos al instante.',
@@ -44,16 +29,27 @@ const modules = [
         color: '#28a745'
     },
     {
-        id: 'sorteo',
-        title: 'Sorteo & Feedback',
-        description: 'Participa en nuestro sorteo Tech Day.',
-        icon: Gift,
-        path: '/sorteo',
-        color: '#6f42c1'
+        id: 'sat',
+        title: 'Soporte Técnico',
+        description: 'Simulación de proceso de asistencia técnica inteligente.',
+        icon: Wrench,
+        path: '/sat',
+        color: '#003366'
+    },
+    {
+        id: 'swarm',
+        title: 'Sala de Brainstorming',
+        description: 'Observa a un equipo de IAs debatiendo y resolviendo retos en tiempo real.',
+        icon: MessageSquare,
+        path: '/swarm',
+        color: '#1a4b8c'
     }
 ];
 
 const Home = () => {
+    const { modulesStatus } = useConfig();
+    const activeModules = modules.filter(mod => modulesStatus[mod.id]);
+
     return (
         <div className="container" style={{ padding: '4rem 1rem', textAlign: 'center' }}>
             <h1 className="page-title" style={{ fontSize: '3rem', marginBottom: '1rem' }}>
@@ -69,7 +65,7 @@ const Home = () => {
                 gap: '2rem',
                 padding: '1rem'
             }}>
-                {modules.map((mod) => (
+                {activeModules.map((mod) => (
                     <Link to={mod.path} key={mod.id} className="card" style={{
                         padding: '2rem',
                         textAlign: 'left',

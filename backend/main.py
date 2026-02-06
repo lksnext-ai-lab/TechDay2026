@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from database import engine, Base, get_db
 import models
 import schemas
-from modules import swarm, audio
+from modules import swarm, audio, mcp
 
 # Create tables (already managed by alembic, but good to have)
 # Base.metadata.create_all(bind=engine)
@@ -41,6 +41,7 @@ app.mount("/uploads", StaticFiles(directory=UPLOADS_DIR), name="uploads")
 
 app.include_router(swarm.router)
 app.include_router(audio.router)
+app.include_router(mcp.router)
 
 MATTIN_URL = os.getenv("MATTIN_URL", "https://aict-desa.lksnext.com")
 API_KEY = os.getenv("API_KEY")
@@ -559,14 +560,13 @@ async def chat_call(app_id: int, agent_id: int, request: Request):
     url = f"{MATTIN_URL}/public/v1/app/{app_id}/chat/{agent_id}/call"
     headers = {
         "X-API-KEY": API_KEY,
-        "Content-Type": "application/json"
     }
     
     body = await request.json()
     
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.post(url, headers=headers, json=body)
+            response = await client.post(url, headers=headers, data=body)
             response.raise_for_status()
             return response.json()
         except httpx.HTTPStatusError as e:

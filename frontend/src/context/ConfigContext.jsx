@@ -53,14 +53,21 @@ export const ConfigProvider = ({ children }) => {
 
     // SAT Config
     const [satConfig, setSatConfig] = useState(() => {
+        const defaults = {
+            siloId: '',
+            docsSiloId: '',
+            agentId: ''
+        };
         const saved = localStorage.getItem('lks_techday_sat_config');
         if (saved) {
-            return JSON.parse(saved);
+            try {
+                return { ...defaults, ...JSON.parse(saved) };
+            } catch (e) {
+                console.error("Error parsing sat config", e);
+                return defaults;
+            }
         }
-        return {
-            siloId: '',
-            docsSiloId: ''
-        };
+        return defaults;
     });
 
     // Save to localStorage whenever config changes
@@ -92,6 +99,29 @@ export const ConfigProvider = ({ children }) => {
         setSatConfig(prev => ({ ...prev, ...newConfig }));
     };
 
+    // Modules Status
+    const [modulesStatus, setModulesStatus] = useState(() => {
+        const saved = localStorage.getItem('lks_techday_modules_status');
+        if (saved) {
+            return JSON.parse(saved);
+        }
+        return {
+            chat: true,
+            swarm: true,
+            audio: true,
+            ocr: true,
+            sat: true
+        };
+    });
+
+    useEffect(() => {
+        localStorage.setItem('lks_techday_modules_status', JSON.stringify(modulesStatus));
+    }, [modulesStatus]);
+
+    const updateModuleStatus = (moduleId, isActive) => {
+        setModulesStatus(prev => ({ ...prev, [moduleId]: isActive }));
+    };
+
     const value = {
         apiConfig,
         globalAppId,
@@ -101,7 +131,9 @@ export const ConfigProvider = ({ children }) => {
         swarmConfig,
         updateSwarmConfig,
         satConfig,
-        updateSatConfig
+        updateSatConfig,
+        modulesStatus,
+        updateModuleStatus
     };
 
     return (
