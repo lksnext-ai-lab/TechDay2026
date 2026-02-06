@@ -4,6 +4,7 @@ import { Send, User, Bot, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import SchemaInfoButton from '../../components/SchemaInfoButton';
 
 
 
@@ -94,7 +95,8 @@ const Chat = () => {
                 <Link to="/" className="btn" style={{ background: 'var(--accent)', padding: '0.5rem' }}>
                     <ArrowLeft size={20} color="var(--text-main)" />
                 </Link>
-                <h2 style={{ margin: 0, color: 'var(--primary)' }}>{chatConfig.title || 'Asistente IA'}</h2>
+                <h2 style={{ margin: 0, color: 'var(--primary)', flex: 1 }}>{chatConfig.title || 'Asistente IA'}</h2>
+                <SchemaInfoButton moduleId="chat" />
             </div>
 
             <div style={{

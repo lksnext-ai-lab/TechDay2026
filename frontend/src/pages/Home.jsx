@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MessageSquare, Wrench, FileText, ArrowRight, Settings, Mic, Bot, Cloud, Database } from 'lucide-react';
+import { MessageSquare, Wrench, FileText, ArrowRight, Settings, Mic, Bot, Cloud, Database, Info } from 'lucide-react';
 import { useConfig } from '../context/ConfigContext';
+import Modal from '../components/Modal';
+import UseCaseSchema, { schemaData } from '../components/UseCaseSchema';
 
 const modules = [
     {
@@ -49,6 +51,13 @@ const modules = [
 const Home = () => {
     const { modulesStatus } = useConfig();
     const activeModules = modules.filter(mod => modulesStatus[mod.id]);
+    const [schemaModal, setSchemaModal] = useState(null);
+
+    const openSchema = (e, moduleId) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setSchemaModal(moduleId);
+    };
 
     return (
         <div className="container" style={{ padding: '1rem 1rem', maxWidth: '95%' }}>
@@ -80,8 +89,17 @@ const Home = () => {
                                 display: 'flex',
                                 flexDirection: 'column',
                                 height: '100%',
-                                borderTop: `4px solid ${mod.color}`
+                                borderTop: `4px solid ${mod.color}`,
+                                position: 'relative'
                             }}>
+                                <button
+                                    className="info-button"
+                                    onClick={(e) => openSchema(e, mod.id)}
+                                    title="Ver esquema técnico"
+                                    style={{ color: mod.color, background: `${mod.color}10` }}
+                                >
+                                    <Info size={18} />
+                                </button>
                                 <div style={{
                                     marginBottom: '1.5rem',
                                     color: mod.color,
@@ -179,6 +197,18 @@ const Home = () => {
             >
                 <Settings size={20} />
             </Link>
+
+            {schemaModal && schemaData[schemaModal] && (
+                <Modal
+                    isOpen={true}
+                    onClose={() => setSchemaModal(null)}
+                    title={schemaData[schemaModal].title}
+                    icon={schemaData[schemaModal].icon}
+                    color={schemaData[schemaModal].color}
+                >
+                    <UseCaseSchema moduleId={schemaModal} />
+                </Modal>
+            )}
         </div>
     );
 };

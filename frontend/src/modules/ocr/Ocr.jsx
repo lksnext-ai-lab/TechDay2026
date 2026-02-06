@@ -4,6 +4,7 @@ import { ArrowLeft, Camera, FileText, Check, Loader, TriangleAlert } from 'lucid
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Link } from 'react-router-dom';
+import SchemaInfoButton from '../../components/SchemaInfoButton';
 
 const Ocr = () => {
     const { apiConfig, globalAppId, ocrConfig } = useConfig();
@@ -128,7 +129,8 @@ const Ocr = () => {
                 <Link to="/" className="btn" style={{ background: 'var(--accent)', padding: '0.5rem' }}>
                     <ArrowLeft size={20} color="var(--text-main)" />
                 </Link>
-                <h2 style={{ margin: 0, color: 'var(--primary)' }}>Digitalización Inteligente (OCR)</h2>
+                <h2 style={{ margin: 0, color: 'var(--primary)', flex: 1 }}>Digitalización Inteligente (OCR)</h2>
+                <SchemaInfoButton moduleId="ocr" />
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>

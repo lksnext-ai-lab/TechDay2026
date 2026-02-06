@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Search, CheckCircle, AlertTriangle, Activity, Database, Plus, List, Wrench } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import SchemaInfoButton from '../../components/SchemaInfoButton';
 import CreateIncident from './components/CreateIncident';
 import ManageIncidents from './components/ManageIncidents';
 import IncidentDetail from './components/IncidentDetail';
@@ -35,6 +36,7 @@ const Sat = () => {
                     <p style={{ color: 'var(--text-muted)', margin: 0 }}>Gestión de incidencias de electrodomésticos.</p>
                 </div>
                 <div style={{ flex: 1 }}></div>
+                <SchemaInfoButton moduleId="sat" />
                 <button
                     onClick={() => setView('machines')}
                     className="btn-ghost"

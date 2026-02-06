@@ -4,6 +4,7 @@ import { ArrowLeft, Play, Send, Bot, User, Brain, Info, CheckCircle, RefreshCcw 
 import { Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import SchemaInfoButton from '../../components/SchemaInfoButton';
 
 const SwarmModule = () => {
     const { globalAppId, swarmConfig, apiConfig } = useConfig();
@@ -203,6 +204,7 @@ const SwarmModule = () => {
                         <h2 style={{ margin: 0, color: 'var(--primary)', lineHeight: 1 }}>{swarmConfig.title}</h2>
                         <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Multi-Agent Collaboration</span>
                     </div>
+                    <SchemaInfoButton moduleId="swarm" />
                 </div>
                 {phase !== 'input' && (
                     <button onClick={reset} className="btn" style={{ background: 'var(--accent)', fontSize: '0.9rem' }}>

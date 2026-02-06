@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Mic, Square, Upload, Play, Pause, FileAudio, Loader2, CheckCircle2, AlertCircle, Trash2 } from 'lucide-react';
+import { Mic, Square, Upload, Play, Pause, FileAudio, Loader2, CheckCircle2, AlertCircle, Trash2, ArrowLeft } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import './AudioModule.css';
 import { useConfig } from '../../context/ConfigContext';
+import SchemaInfoButton from '../../components/SchemaInfoButton';
 
 const AudioModule = () => {
     const { apiConfig } = useConfig();
@@ -158,8 +160,14 @@ const AudioModule = () => {
 
     return (
         <div className="audio-module">
-            <div className="module-header">
-                <h1>Transcripción de Audio</h1>
+            <div className="module-header" style={{ position: 'relative' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
+                    <Link to="/" className="btn" style={{ background: 'var(--accent)', padding: '0.5rem' }}>
+                        <ArrowLeft size={20} color="var(--text-main)" />
+                    </Link>
+                    <h1 style={{ margin: 0, flex: 1 }}>Transcripción de Audio</h1>
+                    <SchemaInfoButton moduleId="audio" />
+                </div>
                 <p>Graba o sube un archivo de audio para que Mattin AI lo transcriba y analice.</p>
             </div>
 
