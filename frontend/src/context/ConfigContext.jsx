@@ -70,6 +70,17 @@ export const ConfigProvider = ({ children }) => {
         return defaults;
     });
 
+    // OCR Config
+    const [ocrConfig, setOcrConfig] = useState(() => {
+        const saved = localStorage.getItem('lks_techday_ocr_config');
+        if (saved) {
+            return JSON.parse(saved);
+        }
+        return {
+            agentId: ''
+        };
+    });
+
     // Save to localStorage whenever config changes
     useEffect(() => {
         localStorage.setItem('lks_techday_app_id', globalAppId);
@@ -87,6 +98,10 @@ export const ConfigProvider = ({ children }) => {
         localStorage.setItem('lks_techday_sat_config', JSON.stringify(satConfig));
     }, [satConfig]);
 
+    useEffect(() => {
+        localStorage.setItem('lks_techday_ocr_config', JSON.stringify(ocrConfig));
+    }, [ocrConfig]);
+
     const updateChatConfig = (newConfig) => {
         setChatConfig(prev => ({ ...prev, ...newConfig }));
     };
@@ -97,6 +112,10 @@ export const ConfigProvider = ({ children }) => {
 
     const updateSatConfig = (newConfig) => {
         setSatConfig(prev => ({ ...prev, ...newConfig }));
+    };
+
+    const updateOcrConfig = (newConfig) => {
+        setOcrConfig(prev => ({ ...prev, ...newConfig }));
     };
 
     // Modules Status
@@ -132,6 +151,8 @@ export const ConfigProvider = ({ children }) => {
         updateSwarmConfig,
         satConfig,
         updateSatConfig,
+        ocrConfig,
+        updateOcrConfig,
         modulesStatus,
         updateModuleStatus
     };

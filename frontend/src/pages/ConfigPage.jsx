@@ -62,13 +62,15 @@ const ConfigPage = () => {
         globalAppId, setGlobalAppId,
         chatConfig, updateChatConfig,
         swarmConfig, updateSwarmConfig,
-        satConfig, updateSatConfig
+        satConfig, updateSatConfig,
+        ocrConfig, updateOcrConfig
     } = useConfig();
 
     const [appIdInput, setAppIdInput] = useState(globalAppId);
     const [chatFormData, setChatFormData] = useState(chatConfig);
     const [swarmFormData, setSwarmFormData] = useState(swarmConfig);
     const [satFormData, setSatFormData] = useState(satConfig);
+    const [ocrFormData, setOcrFormData] = useState(ocrConfig);
 
     const [status, setStatus] = useState('');
     const [activeTab, setActiveTab] = useState('global');
@@ -97,6 +99,13 @@ const ConfigPage = () => {
     const handleSatSubmit = (e) => {
         e.preventDefault();
         updateSatConfig(satFormData);
+        setStatus('success');
+        setTimeout(() => setStatus(''), 2000);
+    };
+
+    const handleOcrSubmit = (e) => {
+        e.preventDefault();
+        updateOcrConfig(ocrFormData);
         setStatus('success');
         setTimeout(() => setStatus(''), 2000);
     };
@@ -423,9 +432,28 @@ const ConfigPage = () => {
                             </p>
                         </div>
                         <ModuleToggle moduleId="ocr" label="OCR" />
-                        <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-                            <p>Más configuración próximamente.</p>
-                        </div>
+
+                        <form onSubmit={handleOcrSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--text-main)' }}>Agent ID</label>
+                                <input
+                                    type="number"
+                                    value={ocrFormData.agentId || ''}
+                                    onChange={(e) => setOcrFormData({ ...ocrFormData, agentId: e.target.value })}
+                                    placeholder="ID del agente para OCR"
+                                    style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--accent)' }}
+                                />
+                                <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                    Agente de Mattin que procesará los documentos escaneados.
+                                </p>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '1rem' }}>
+                                {status === 'success' && <span style={{ color: 'green', fontSize: '0.9rem' }}>¡Guardado!</span>}
+                                <button type="submit" className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem' }}>
+                                    <Save size={18} /> Guardar Config OCR
+                                </button>
+                            </div>
+                        </form>
                     </>
                 )}
             </div>
