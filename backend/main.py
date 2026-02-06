@@ -564,14 +564,20 @@ async def chat_call(app_id: int, agent_id: int, request: Request):
     
     body = await request.json()
     
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=60.0) as client:
         try:
+            # Mattin expects form-urlencoded (data=...) not JSON
             response = await client.post(url, headers=headers, data=body)
             response.raise_for_status()
             return response.json()
+        except httpx.ReadTimeout:
+            print(f"ERROR MATTIN CHAT: Timeout waiting for response")
+            raise HTTPException(status_code=504, detail="Timeout waiting for AI response")
         except httpx.HTTPStatusError as e:
+            print(f"ERROR MATTIN CHAT (HTTP): {str(e)} - {e.response.text}")
             raise HTTPException(status_code=e.response.status_code, detail=str(e))
         except Exception as e:
+            print(f"ERROR MATTIN CHAT: {str(e)}")
             raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":

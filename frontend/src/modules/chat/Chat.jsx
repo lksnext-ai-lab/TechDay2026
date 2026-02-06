@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useConfig } from '../../context/ConfigContext';
 import { Send, User, Bot, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 
 
@@ -132,7 +134,9 @@ const Chat = () => {
                                 </div>
                             )}
 
-                            <div style={{
+
+
+                            <div className="markdown-content" style={{
                                 maxWidth: '70%',
                                 padding: '1rem',
                                 borderRadius: '1rem',
@@ -143,7 +147,24 @@ const Chat = () => {
                                 boxShadow: msg.sender === 'bot' ? 'var(--shadow-sm)' : 'none',
                                 lineHeight: '1.5'
                             }}>
-                                {msg.text}
+                                <ReactMarkdown
+                                    remarkPlugins={[remarkGfm]}
+                                    components={{
+                                        // Override specific elements if needed to force colors in user bubbles
+                                        p: ({ node, ...props }) => <p style={{ margin: 0, marginBottom: '0.5rem' }} {...props} />,
+                                        code: ({ node, inline, ...props }) => (
+                                            <code style={{
+                                                background: msg.sender === 'user' ? 'rgba(255,255,255,0.2)' : '#f1f1f1',
+                                                color: 'inherit',
+                                                padding: '0.2rem 0.4rem',
+                                                borderRadius: '4px',
+                                                fontFamily: 'monospace'
+                                            }} {...props} />
+                                        )
+                                    }}
+                                >
+                                    {msg.text}
+                                </ReactMarkdown>
                             </div>
 
                             {msg.sender === 'user' && (
