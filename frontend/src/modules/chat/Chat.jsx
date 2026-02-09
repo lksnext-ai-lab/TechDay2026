@@ -15,6 +15,7 @@ const Chat = () => {
     ]);
     const [input, setInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
+    const [conversationId, setConversationId] = useState(null);
     const messagesEndRef = useRef(null);
 
     const scrollToBottom = () => {
@@ -34,6 +35,7 @@ const Chat = () => {
                     method: 'POST'
                 });
                 console.log("Conversation reset");
+                setConversationId(null);
             } catch (error) {
                 console.error("Failed to reset conversation:", error);
             }
@@ -63,7 +65,8 @@ const Chat = () => {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    message: userMessage.text
+                    message: userMessage.text,
+                    ...(conversationId !== null && { conversation_id: conversationId })
                 })
             });
 
@@ -73,6 +76,10 @@ const Chat = () => {
 
             const data = await response.json();
             const botResponse = data.response; // Adjust based on actual API response structure if different
+
+            if (data.conversation_id) {
+                setConversationId(data.conversation_id);
+            }
 
             setMessages(prev => [
                 ...prev,

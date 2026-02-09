@@ -21,7 +21,7 @@ class Incident(Base):
 
     id = Column(String, primary_key=True, index=True)
     machine_id = Column(String, ForeignKey("machines.id"))
-    title = Column(String, nullable=False)
+    title = Column(String, nullable=True)
     description = Column(Text)
     status = Column(String, default="open") # open, in_progress, resolved, closed
     priority = Column(String, default="medium") # low, medium, high, critical

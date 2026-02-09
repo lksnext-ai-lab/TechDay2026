@@ -60,9 +60,9 @@ const ManageIncidents = ({ onBack, onSelectIncident }) => {
 
     const filteredIncidents = incidents.filter(inc => {
         const matchesStatus = filterStatus === 'all' || inc.status === filterStatus;
-        const matchesSearch = inc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            inc.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            inc.machine_id.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch = (inc.title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+            (inc.id?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+            (inc.machine_id?.toLowerCase() || '').includes(searchTerm.toLowerCase());
         return matchesStatus && matchesSearch;
     });
 
@@ -155,7 +155,7 @@ const ManageIncidents = ({ onBack, onSelectIncident }) => {
                                 <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{new Date(inc.created_at).toLocaleDateString()}</span>
                             </div>
                             <div>
-                                <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-main)' }}>{inc.title}</h4>
+                                <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-main)' }}>{inc.title || 'Incidencia sin título'}</h4>
                                 <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                     <span style={{ padding: '0.2rem 0.5rem', background: 'var(--bg-offset)', borderRadius: '4px' }}>{inc.machine_id}</span>
                                 </span>

@@ -20,7 +20,7 @@ class IncidentLog(IncidentLogBase):
 class IncidentBase(BaseModel):
     id: Optional[str] = None
     machine_id: str
-    title: str
+    title: Optional[str] = None
     description: Optional[str] = None
     status: str = "open"
     priority: str = "medium"

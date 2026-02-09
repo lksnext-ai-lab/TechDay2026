@@ -7,6 +7,7 @@ const CallCenterAgent = ({ onBack }) => {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [conversationId, setConversationId] = useState(null);
     const messagesEndRef = useRef(null);
 
     // Initial greeting
@@ -18,7 +19,20 @@ const CallCenterAgent = ({ onBack }) => {
                 content: '¡Hola! Soy tu asistente de Soporte Técnico. ¿En qué puedo ayudarte hoy? Puedo crear incidencias y consultar modelos de electrodomésticos.'
             }
         ]);
-    }, []);
+
+        const resetConversation = async () => {
+            if (!globalAppId || !satConfig.agentId) return;
+            try {
+                await fetch(`${apiConfig.baseUrl}/api/chat/${globalAppId}/${satConfig.agentId}/reset`, {
+                    method: 'POST'
+                });
+                setConversationId(null);
+            } catch (error) {
+                console.error("Failed to reset sat conversation:", error);
+            }
+        };
+        resetConversation();
+    }, [globalAppId, satConfig.agentId, apiConfig.baseUrl]);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -59,7 +73,8 @@ const CallCenterAgent = ({ onBack }) => {
                 },
                 body: JSON.stringify({
                     message: input,
-                    stream: false
+                    stream: false,
+                    ...(conversationId !== null && { conversation_id: conversationId })
                 })
             });
 
@@ -68,6 +83,10 @@ const CallCenterAgent = ({ onBack }) => {
             }
 
             const data = await response.json();
+
+            if (data.conversation_id) {
+                setConversationId(data.conversation_id);
+            }
 
             // Assuming the standard Mattin response structure
             const assistantMessage = {

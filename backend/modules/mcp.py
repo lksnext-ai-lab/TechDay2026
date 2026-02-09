@@ -28,7 +28,7 @@ def get_machine_models(machine_type: str, db: Session = next(get_db())):
     results = db.query(models.Machine).filter(models.Machine.type == machine_type).all()
     return [{"id": m.id, "model": m.model, "type": m.type} for m in results]
 
-def create_incident_tool(machine_id: str, title: str, description: str, db: Session = next(get_db())):
+def create_incident_tool(machine_id: str, title: Optional[str], description: str, reported_by: Optional[str] = None, db: Session = next(get_db())):
     """Creates a new incident in the database."""
     # Verify machine exists
     machine = db.query(models.Machine).filter(models.Machine.id == machine_id).first()
@@ -42,7 +42,8 @@ def create_incident_tool(machine_id: str, title: str, description: str, db: Sess
         title=title,
         description=description,
         status="open",
-        priority="medium" # Default
+        priority="medium", # Default
+        reported_by=reported_by
     )
     
     try:
@@ -101,14 +102,18 @@ TOOLS = [
                 },
                 "title": {
                     "type": "string",
-                    "description": "Short title of the incident."
+                    "description": "Short title of the incident. Optional."
                 },
                 "description": {
                     "type": "string",
                     "description": "Detailed description of the problem."
+                },
+                "reported_by": {
+                    "type": "string",
+                    "description": "The name or ID of the person reporting the incident."
                 }
             },
-            "required": ["machine_id", "title", "description"]
+            "required": ["machine_id", "description"]
         }
     }
 ]
@@ -245,7 +250,8 @@ async def handle_messages(request: Request, session_id: str = None):
                 m_id = tool_args.get("machine_id")
                 title = tool_args.get("title")
                 desc = tool_args.get("description")
-                result = create_incident_tool(m_id, title, desc, db)
+                reported_by = tool_args.get("reported_by")
+                result = create_incident_tool(m_id, title, desc, reported_by, db)
             else:
                 is_error = True
                 result = f"Unknown tool: {tool_name}"

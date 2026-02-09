@@ -24,22 +24,25 @@ export const flows = {
     },
     audio: {
         nodes: [
-            { id: 'mic', data: { label: 'Captura Audio' }, position: { x: 0, y: 150 }, type: 'input' },
+            { id: 'audioInput', data: { label: 'Audio (Captura/Subida)' }, position: { x: 50, y: -140 }, type: 'input' },
             {
                 id: 'audioGroup',
                 data: { label: 'Mattin.ai Platform' },
-                position: { x: 180, y: 40 },
-                style: { width: 380, height: 220, border: '2px dashed #d63384', borderRadius: '16px', background: 'rgba(214, 51, 132, 0.03)' },
+                position: { x: 250, y: -50 },
+                style: { width: 380, height: 240, border: '2px dashed #d63384', borderRadius: '16px', background: 'rgba(214, 51, 132, 0.03)' },
                 type: 'group'
             },
-            { id: 'stt', data: { label: 'Azure STT' }, position: { x: 20, y: 110 }, parentId: 'audioGroup', extent: 'parent' },
-            { id: 'nlp', data: { label: 'Análisis NLP' }, position: { x: 210, y: 110 }, parentId: 'audioGroup', extent: 'parent' },
-            { id: 'result', data: { label: 'Insights Emocionales' }, position: { x: 620, y: 150 }, type: 'output' }
+            { id: 'audioAgent', data: { label: 'Agente Audio' }, position: { x: 100, y: 120 }, parentId: 'audioGroup', extent: 'parent' },
+            { id: 'mcpSTT', data: { label: 'MCP Tool (STT)' }, position: { x: 250, y: 30 }, parentId: 'audioGroup', extent: 'parent' },
+            { id: 'ddStructureAudio', data: { label: 'ddStructure (JSON)' }, position: { x: 10, y: 20 }, parentId: 'audioGroup', extent: 'parent' },
+            { id: 'sentimentLLM', data: { label: 'LLM Sentiment' }, position: { x: 700, y: 150 } }
         ],
         edges: [
-            { id: 'e1', source: 'mic', target: 'stt', animated: true },
-            { id: 'e2', source: 'stt', target: 'nlp', label: 'Texto', animated: true },
-            { id: 'e3', source: 'nlp', target: 'result', label: 'Sentimientos', animated: true }
+            { id: 'e1', source: 'audioInput', target: 'audioAgent', targetHandle: 'l', animated: true, sourceHandle: 'sb' },
+            { id: 'e2', source: 'audioAgent', target: 'mcpSTT', sourceHandle: 'sr', targetHandle: 'l', label: 'Audio', animated: true },
+            { id: 'e3', source: 'mcpSTT', target: 'audioAgent', sourceHandle: 'sb', targetHandle: 'r', label: 'Texto', animated: true, type: 'smoothstep' },
+            { id: 'e4', source: 'audioAgent', target: 'sentimentLLM', sourceHandle: 'sb', targetHandle: 'l', label: 'Analizar', animated: true },
+            { id: 'e5', source: 'ddStructureAudio', target: 'audioAgent', sourceHandle: 'sb', targetHandle: 't', label: 'Config', animated: false }
         ]
     },
     ocr: {

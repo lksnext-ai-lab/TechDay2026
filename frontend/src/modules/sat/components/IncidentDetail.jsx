@@ -94,7 +94,7 @@ const IncidentDetail = ({ incidentId, onBack }) => {
                     <ArrowLeft size={20} color="var(--text-main)" />
                 </button>
                 <div style={{ flex: 1 }}>
-                    <h2 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.5rem' }}>{incident.title}</h2>
+                    <h2 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.5rem' }}>{incident.title || 'Incidencia sin título'}</h2>
                     <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{incident.id} • {new Date(incident.created_at).toLocaleString()}</span>
                 </div>
                 {incident.status !== 'resolved' && incident.status !== 'closed' && (
@@ -186,7 +186,7 @@ const IncidentDetail = ({ incidentId, onBack }) => {
                         <div style={{ marginTop: '1rem' }}>
                             <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>Reportado por</label>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-main)' }}>
-                                <User size={16} /> {incident.reported_by}
+                                <User size={16} /> {incident.reported_by || 'Anonimo'}
                             </div>
                         </div>
                     </div>
