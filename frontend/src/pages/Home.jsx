@@ -124,56 +124,42 @@ const Home = () => {
 
                 {/* Sidebar */}
                 <div style={{
-                    width: '220px',
+                    width: '240px',
                     padding: '2rem',
                     background: 'rgba(255, 255, 255, 0.03)',
-                    borderRadius: '1rem',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    marginTop: '2rem'
+                    borderRadius: '1.5rem',
+                    marginTop: '2rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '2.5rem'
                 }}>
-                    <div style={{ marginBottom: '3rem' }}>
-                        <p style={{
-                            fontSize: '0.9rem',
-                            textTransform: 'uppercase',
-                            letterSpacing: '1px',
-                            color: 'var(--text-muted)',
-                            marginBottom: '1.5rem',
-                            fontWeight: 800
-                        }}>
-                            Works with:
-                        </p>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <a href="http://mattin.ai" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center' }}>
-                                    <img src="/mattin_logo.svg" alt="Mattin AI" style={{ height: '32px', width: 'auto' }} />
+                    <div className="banner-group" style={{ alignItems: 'flex-start' }}>
+                        <h4 style={{ margin: 0, fontSize: '0.7rem' }}>SOCIOS TECNOLÓGICOS</h4>
+                        <div className="logo-grid" style={{ flexDirection: 'column', gap: '1rem' }}>
+                            <div className="logo-badge" style={{ width: '100%' }}>
+                                <a href="http://mattin.ai" target="_blank" rel="noopener noreferrer">
+                                    <img src="/mattin_logo.svg" alt="Mattin AI" />
                                 </a>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <a href="https://azure.microsoft.com/" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center' }}>
-                                    <img src="/azure_logo.png" alt="Microsoft Azure" style={{ height: '88px', width: 'auto' }} />
+                            <div className="logo-badge" style={{ width: '100%' }}>
+                                <a href="https://azure.microsoft.com/" target="_blank" rel="noopener noreferrer">
+                                    <img src="/azure_logo.png" alt="Microsoft Azure" />
                                 </a>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <a href="https://aws.amazon.com/bedrock/" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center' }}>
-                                    <img src="/bedrock_logo.png" alt="AWS Bedrock" style={{ height: '75px', width: 'auto' }} />
+                            <div className="logo-badge" style={{ width: '100%' }}>
+                                <a href="https://aws.amazon.com/bedrock/" target="_blank" rel="noopener noreferrer">
+                                    <img src="/bedrock_logo.png" alt="AWS Bedrock" />
                                 </a>
                             </div>
                         </div>
                     </div>
 
-                    <div>
-                        <p style={{
-                            fontSize: '0.9rem',
-                            textTransform: 'uppercase',
-                            letterSpacing: '1px',
-                            color: 'var(--text-muted)',
-                            marginBottom: '1.5rem',
-                            fontWeight: 800
-                        }}>
-                            Development powered by:
-                        </p>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            <img src="/gitlab_duo.png" alt="GitLab Duo" style={{ height: '110px', width: 'auto' }} />
+                    <div className="banner-group" style={{ alignItems: 'flex-start' }}>
+                        <h4 style={{ margin: 0, fontSize: '0.7rem' }}>IMPULSADO POR</h4>
+                        <div className="logo-grid" style={{ flexDirection: 'column', gap: '1rem' }}>
+                            <div className="logo-badge" style={{ width: '100%' }}>
+                                <img src="/gitlab_duo.png" alt="GitLab Duo" />
+                            </div>
                         </div>
                     </div>
                 </div>

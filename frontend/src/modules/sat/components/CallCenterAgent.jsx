@@ -9,6 +9,7 @@ const CallCenterAgent = ({ onBack }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [conversationId, setConversationId] = useState(null);
     const messagesEndRef = useRef(null);
+    const inputRef = useRef(null);
 
     // Initial greeting
     useEffect(() => {
@@ -41,6 +42,13 @@ const CallCenterAgent = ({ onBack }) => {
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
+
+    // Restore focus when loading finishes
+    useEffect(() => {
+        if (!isLoading) {
+            inputRef.current?.focus();
+        }
+    }, [isLoading]);
 
     const handleSend = async (e) => {
         e.preventDefault();
@@ -236,10 +244,12 @@ const CallCenterAgent = ({ onBack }) => {
                 }}>
                     <form onSubmit={handleSend} style={{ display: 'flex', width: '100%', gap: '1rem' }}>
                         <input
+                            ref={inputRef}
                             type="text"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             placeholder="Describe la incidencia..."
+                            autoFocus
                             style={{
                                 flex: 1,
                                 padding: '1rem',
