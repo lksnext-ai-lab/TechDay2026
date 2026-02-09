@@ -67,24 +67,47 @@ export const flows = {
     },
     sat: {
         nodes: [
-            { id: 'incident', data: { label: 'Registro Incidencia' }, position: { x: 0, y: 150 }, type: 'input' },
-            { id: 'search', data: { label: 'Búsqueda Semántica' }, position: { x: 180, y: 150 } },
+            // Incident Creation Path (Left)
+            { id: 'userCall', data: { label: 'Usuario (Call Center)' }, position: { x: 0, y: -60 }, type: 'input' },
+
+            // Mattin.ai Platform Group
             {
                 id: 'satGroup',
                 data: { label: 'Mattin.ai Platform' },
-                position: { x: 360, y: 40 },
-                style: { width: 380, height: 220, border: '2px dashed #003366', borderRadius: '16px', background: 'rgba(0, 51, 102, 0.03)' },
+                position: { x: 180, y: -30 },
+                style: { width: 500, height: 300, border: '2px dashed #003366', borderRadius: '16px', background: 'rgba(0, 51, 102, 0.03)' },
                 type: 'group'
             },
-            { id: 'vector', data: { label: 'Vector DB' }, position: { x: 20, y: 110 }, parentId: 'satGroup', extent: 'parent' },
-            { id: 'rag', data: { label: 'RAG Engine' }, position: { x: 210, y: 110 }, parentId: 'satGroup', extent: 'parent' },
-            { id: 'solution', data: { label: 'Propuesta Solución' }, position: { x: 800, y: 150 }, type: 'output' }
+            { id: 'satAgent', data: { label: 'Agente SAT' }, position: { x: 30, y: 50 }, parentId: 'satGroup', extent: 'parent' },
+            { id: 'mcpTools', data: { label: 'MCP Tools' }, position: { x: 30, y: 160 }, parentId: 'satGroup', extent: 'parent' },
+            { id: 'ragEngine', data: { label: 'RAG Engine' }, position: { x: 200, y: 100 }, parentId: 'satGroup', extent: 'parent' },
+            { id: 'siloInc', data: { label: 'Silo Incidencias' }, position: { x: 350, y: 50 }, parentId: 'satGroup', extent: 'parent' },
+            { id: 'siloDocs', data: { label: 'Silo Documentación' }, position: { x: 350, y: 160 }, parentId: 'satGroup', extent: 'parent' },
+
+            // External Components
+            { id: 'database', data: { label: 'Base de Datos' }, position: { x: 200, y: 370 } },
+            { id: 'technician', data: { label: 'Técnico' }, position: { x: 750, y: 320 } },
+            { id: 'output', data: { label: 'Sugerencias' }, position: { x: 750, y: 220 }, type: 'output' }
         ],
         edges: [
-            { id: 'e1', source: 'incident', target: 'search', animated: true },
-            { id: 'e2', source: 'search', target: 'vector', label: 'Consulta', animated: true },
-            { id: 'e3', source: 'vector', target: 'rag', label: 'Contexto', animated: true },
-            { id: 'e4', source: 'rag', target: 'solution', label: 'Respuesta', animated: true }
+            // Incident Creation Flow (User → Agent → MCP → DB)
+            { id: 'e1', source: 'userCall', target: 'satAgent', animated: true, sourceHandle: 'sb', targetHandle: 'l', label: 'Abre Inc.' },
+            { id: 'e2', source: 'satAgent', target: 'mcpTools', sourceHandle: 'sb', targetHandle: 't', label: 'Tool Call', animated: true },
+            { id: 'e3', source: 'mcpTools', target: 'database', sourceHandle: 'sb', targetHandle: 't', label: 'Crear Inc.', animated: true },
+
+            // Technician Resolution Flow (Tech → DB → RAG → Silos → Suggestions)
+            { id: 'e4', source: 'technician', target: 'database', sourceHandle: 'sb', targetHandle: 'r', label: 'Selecciona Inc.' },
+            { id: 'e5', source: 'database', target: 'ragEngine', label: 'Buscar', animated: true, targetHandle: 'sb', sourceHandle: 'sr' },
+            { id: 'e6', source: 'ragEngine', target: 'siloInc', sourceHandle: 'sr', targetHandle: 'l', label: 'Query' },
+            { id: 'e7', source: 'ragEngine', target: 'siloDocs', sourceHandle: 'sr', targetHandle: 'l', label: 'Query' },
+            { id: 'e8', source: 'siloInc', target: 'output', sourceHandle: 'sr', targetHandle: 't', label: 'Similares', animated: true, type: 'smoothstep' },
+            { id: 'e9', source: 'siloDocs', target: 'output', sourceHandle: 'sr', targetHandle: 'b', label: 'Manuales', animated: true, type: 'smoothstep' },
+            { id: 'e12', source: 'technician', target: 'ragEngine', sourceHandle: 'sl', targetHandle: 'b', label: 'Cerrar Inc.', animated: false, type: 'smoothstep', style: { strokeWidth: 3, stroke: '#c41432' } },
+            { id: 'e13', source: 'output', target: 'technician', sourceHandle: 'sr', targetHandle: 'r', label: 'Info+', animated: true, type: 'smoothstep' },
+            { id: 'e14', source: 'ragEngine', target: 'siloInc', sourceHandle: 'sr', targetHandle: 'b', label: 'Index', animated: false, type: 'smoothstep', style: { strokeWidth: 3, stroke: '#c41432' } },
+            { id: 'e15', source: 'ragEngine', target: 'siloDocs', sourceHandle: 'sr', targetHandle: 't', label: 'Index', animated: false, type: 'smoothstep', style: { strokeWidth: 3, stroke: '#c41432' } },
+
+
         ]
     },
     swarm: {

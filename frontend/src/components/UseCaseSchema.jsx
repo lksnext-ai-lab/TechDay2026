@@ -153,9 +153,9 @@ export default function UseCaseSchema({ moduleId, height }) {
 
     const edges = useMemo(() => flowData.edges.map(edge => ({
         ...edge,
-        style: { stroke: data.color, strokeWidth: 2 },
-        type: 'smoothstep',
-        labelStyle: { fill: data.color, fontWeight: '700', fontSize: '10px' },
+        style: { stroke: data.color, strokeWidth: 2, ...edge.style },
+        type: edge.type || 'smoothstep',
+        labelStyle: { fill: edge.style?.stroke || data.color, fontWeight: '700', fontSize: '10px' },
         labelBgPadding: [8, 4],
         labelBgBorderRadius: 4,
         labelBgStyle: { fill: 'var(--white)', fillOpacity: 0.8 }
