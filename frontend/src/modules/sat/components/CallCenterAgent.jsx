@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, ArrowLeft, Bot, User, Phone } from 'lucide-react';
 import { useConfig } from '../../../context/ConfigContext';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const CallCenterAgent = ({ onBack }) => {
     const { globalAppId, satConfig, apiConfig } = useConfig();
@@ -180,7 +182,7 @@ const CallCenterAgent = ({ onBack }) => {
                                 </div>
                             )}
 
-                            <div style={{
+                            <div className="markdown-content" style={{
                                 padding: '1.25rem',
                                 background: msg.role === 'user' ? 'var(--primary)' : 'var(--bg-offset)',
                                 color: msg.role === 'user' ? 'white' : 'var(--text-main)',
@@ -190,7 +192,23 @@ const CallCenterAgent = ({ onBack }) => {
                                 boxShadow: 'var(--shadow-sm)',
                                 whiteSpace: 'pre-wrap'
                             }}>
-                                {msg.content}
+                                <ReactMarkdown
+                                    remarkPlugins={[remarkGfm]}
+                                    components={{
+                                        p: ({ node, ...props }) => <p style={{ margin: 0, marginBottom: '0.5rem' }} {...props} />,
+                                        code: ({ node, inline, ...props }) => (
+                                            <code style={{
+                                                background: msg.role === 'user' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.05)',
+                                                color: 'inherit',
+                                                padding: '0.2rem 0.4rem',
+                                                borderRadius: '4px',
+                                                fontFamily: 'monospace'
+                                            }} {...props} />
+                                        )
+                                    }}
+                                >
+                                    {msg.content}
+                                </ReactMarkdown>
                             </div>
 
                             {msg.role === 'user' && (
