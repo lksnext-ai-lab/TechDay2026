@@ -1,13 +1,13 @@
 export const flows = {
     chat: {
         nodes: [
-            { id: 'user', data: { label: 'Usuario' }, position: { x: 0, y: -40 }, type: 'input' },
-            { id: 'demoApp', data: { label: 'Demo App' }, position: { x: 80, y: 50 } },
+            { id: 'user', data: { label: 'Usuario' }, position: { x: 0, y: -140 }, type: 'input' },
+            { id: 'demoApp', data: { label: 'Demo App' }, position: { x: 80, y: -50 } },
 
             {
                 id: 'platformGroup',
                 data: { label: 'Mattin.ai Platform' },
-                position: { x: 250, y: 80 },
+                position: { x: 250, y: -20 },
                 style: { width: 380, height: 220, border: '2px dashed #F85900', borderRadius: '16px', background: 'rgba(248, 89, 0, 0.03)' },
                 type: 'group'
             },
@@ -16,77 +16,98 @@ export const flows = {
             { id: 'webDomain', data: { label: 'Web / Dominio' }, position: { x: 650, y: 80 } }
         ],
         edges: [
-            { id: 'e1', source: 'user', target: 'demoApp', animated: true },
-            { id: 'e2', source: 'demoApp', target: 'agent', animated: true, label: 'API' },
-            { id: 'e4', source: 'agent', target: 'ragSilo', animated: true, label: 'RAG/Tool' },
+            { id: 'e1', source: 'user', target: 'demoApp', animated: true, sourceHandle: 'sb' },
+            { id: 'e2', source: 'demoApp', target: 'agent', animated: true, label: 'API', sourceHandle: 'sb' },
+            { id: 'e4', source: 'agent', target: 'ragSilo', animated: true, label: 'RAG/Tool', sourceHandle: 'sb' },
             { id: 'e5', source: 'webDomain', target: 'ragSilo', label: 'Indexado', animated: true, style: { strokeDasharray: '5,5' } }
         ]
     },
     audio: {
         nodes: [
-            { id: '1', data: { label: 'Captura de audio' }, position: { x: 0, y: 100 }, type: 'input' },
-            { id: '2', data: { label: 'Azure STT' }, position: { x: 200, y: 40 } },
-            { id: '3', data: { label: 'Análisis NLP' }, position: { x: 200, y: 160 } },
-            { id: '4', data: { label: 'Sintetizador' }, position: { x: 400, y: 100 } },
-            { id: '5', data: { label: 'Resultados e Insights' }, position: { x: 600, y: 100 }, type: 'output' }
+            { id: 'mic', data: { label: 'Captura Audio' }, position: { x: 0, y: 150 }, type: 'input' },
+            {
+                id: 'audioGroup',
+                data: { label: 'Mattin.ai Platform' },
+                position: { x: 180, y: 40 },
+                style: { width: 380, height: 220, border: '2px dashed #d63384', borderRadius: '16px', background: 'rgba(214, 51, 132, 0.03)' },
+                type: 'group'
+            },
+            { id: 'stt', data: { label: 'Azure STT' }, position: { x: 20, y: 110 }, parentId: 'audioGroup', extent: 'parent' },
+            { id: 'nlp', data: { label: 'Análisis NLP' }, position: { x: 210, y: 110 }, parentId: 'audioGroup', extent: 'parent' },
+            { id: 'result', data: { label: 'Insights Emocionales' }, position: { x: 620, y: 150 }, type: 'output' }
         ],
         edges: [
-            { id: 'e1-2', source: '1', target: '2', animated: true },
-            { id: 'e1-3', source: '1', target: '3', animated: true },
-            { id: 'e2-4', source: '2', target: '4' },
-            { id: 'e3-4', source: '3', target: '4' },
-            { id: 'e4-5', source: '4', target: '5' }
+            { id: 'e1', source: 'mic', target: 'stt', animated: true },
+            { id: 'e2', source: 'stt', target: 'nlp', label: 'Texto', animated: true },
+            { id: 'e3', source: 'nlp', target: 'result', label: 'Sentimientos', animated: true }
         ]
     },
     ocr: {
         nodes: [
-            { id: '1', data: { label: 'Captura Imagen' }, position: { x: 0, y: 100 }, type: 'input' },
-            { id: '2', data: { label: 'Preprocesamiento' }, position: { x: 200, y: 100 } },
-            { id: '3', data: { label: 'Vision AI OCR' }, position: { x: 400, y: 40 } },
-            { id: '4', data: { label: 'Claude Vision' }, position: { x: 400, y: 160 } },
-            { id: '5', data: { label: 'Datos Estructurados' }, position: { x: 600, y: 100 }, type: 'output' }
+            { id: 'capture', data: { label: 'Captura Imagen' }, position: { x: 180, y: -50 } },
+            {
+                id: 'ocrGroup',
+                data: { label: 'Mattin.ai Platform' },
+                position: { x: 360, y: -60 },
+                style: { width: 380, height: 220, border: '2px dashed #28a745', borderRadius: '16px', background: 'rgba(40, 167, 69, 0.03)' },
+                type: 'group'
+            },
+            { id: 'ocrAgent', data: { label: 'Agente OCR' }, position: { x: 100, y: 110 }, parentId: 'ocrGroup', extent: 'parent' },
+            { id: 'ddStructure', data: { label: 'Dynamic Data Structure' }, position: { x: 200, y: 20 }, parentId: 'ocrGroup', extent: 'parent' },
+            { id: 'multimodalLLM', data: { label: 'LLM Multimodal' }, position: { x: 810, y: 170 } }
         ],
         edges: [
-            { id: 'e1-2', source: '1', target: '2', animated: true },
-            { id: 'e2-3', source: '2', target: '3' },
-            { id: 'e2-4', source: '2', target: '4' },
-            { id: 'e3-5', source: '3', target: '5' },
-            { id: 'e4-5', source: '4', target: '5' }
+            { id: 'e2', source: 'capture', target: 'ocrAgent', targetHandle: 'l', label: 'Imagen', animated: true, sourceHandle: 'sb' },
+            { id: 'e3', source: 'ocrAgent', target: 'multimodalLLM', sourceHandle: 'sb', label: 'Texto', animated: true },
+            { id: 'e4', source: 'ddStructure', target: 'ocrAgent', sourceHandle: 'sb', targetHandle: 'r', label: 'Estructura', animated: false, type: 'smoothstep' }
         ]
     },
     sat: {
         nodes: [
-            { id: '1', data: { label: 'Registro Incidencia' }, position: { x: 0, y: 100 }, type: 'input' },
-            { id: '2', data: { label: 'Búsqueda Semántica' }, position: { x: 200, y: 100 } },
-            { id: '3', data: { label: 'Vector DB' }, position: { x: 400, y: 40 } },
-            { id: '4', data: { label: 'RAG Engine' }, position: { x: 400, y: 160 } },
-            { id: '5', data: { label: 'Propuesta Solución' }, position: { x: 600, y: 100 }, type: 'output' }
+            { id: 'incident', data: { label: 'Registro Incidencia' }, position: { x: 0, y: 150 }, type: 'input' },
+            { id: 'search', data: { label: 'Búsqueda Semántica' }, position: { x: 180, y: 150 } },
+            {
+                id: 'satGroup',
+                data: { label: 'Mattin.ai Platform' },
+                position: { x: 360, y: 40 },
+                style: { width: 380, height: 220, border: '2px dashed #003366', borderRadius: '16px', background: 'rgba(0, 51, 102, 0.03)' },
+                type: 'group'
+            },
+            { id: 'vector', data: { label: 'Vector DB' }, position: { x: 20, y: 110 }, parentId: 'satGroup', extent: 'parent' },
+            { id: 'rag', data: { label: 'RAG Engine' }, position: { x: 210, y: 110 }, parentId: 'satGroup', extent: 'parent' },
+            { id: 'solution', data: { label: 'Propuesta Solución' }, position: { x: 800, y: 150 }, type: 'output' }
         ],
         edges: [
-            { id: 'e1-2', source: '1', target: '2', animated: true },
-            { id: 'e2-3', source: '2', target: '3' },
-            { id: 'e2-4', source: '2', target: '4' },
-            { id: 'e3-5', source: '3', target: '5' },
-            { id: 'e4-5', source: '4', target: '5' }
+            { id: 'e1', source: 'incident', target: 'search', animated: true },
+            { id: 'e2', source: 'search', target: 'vector', label: 'Consulta', animated: true },
+            { id: 'e3', source: 'vector', target: 'rag', label: 'Contexto', animated: true },
+            { id: 'e4', source: 'rag', target: 'solution', label: 'Respuesta', animated: true }
         ]
     },
     swarm: {
         nodes: [
-            { id: '1', data: { label: 'Reto planteado' }, position: { x: 0, y: 150 }, type: 'input' },
-            { id: '2', data: { label: 'Agente A' }, position: { x: 250, y: 50 } },
-            { id: '3', data: { label: 'Agente B' }, position: { x: 250, y: 150 } },
-            { id: '4', data: { label: 'Agente C' }, position: { x: 250, y: 250 } },
-            { id: '5', data: { label: 'Moderador IA' }, position: { x: 500, y: 150 } },
-            { id: '6', data: { label: 'Conclusión Final' }, position: { x: 750, y: 150 }, type: 'output' }
+            { id: 'input', data: { label: 'Reto planteado' }, position: { x: 0, y: 150 }, type: 'input' },
+            {
+                id: 'swarmGroup',
+                data: { label: 'Mattin.ai Platform' },
+                position: { x: 180, y: 20 },
+                style: { width: 450, height: 280, border: '2px dashed #1a4b8c', borderRadius: '16px', background: 'rgba(26, 75, 140, 0.03)' },
+                type: 'group'
+            },
+            { id: 'agentA', data: { label: 'Agente Estrategia' }, position: { x: 20, y: 40 }, parentId: 'swarmGroup' },
+            { id: 'agentB', data: { label: 'Agente Creativo' }, position: { x: 20, y: 110 }, parentId: 'swarmGroup' },
+            { id: 'agentC', data: { label: 'Agente Crítico' }, position: { x: 20, y: 180 }, parentId: 'swarmGroup' },
+            { id: 'mod', data: { label: 'Moderador IA' }, position: { x: 250, y: 110 }, parentId: 'swarmGroup' },
+            { id: 'output', data: { label: 'Conclusión' }, position: { x: 680, y: 150 }, type: 'output' }
         ],
         edges: [
-            { id: 'e1-2', source: '1', target: '2', animated: true },
-            { id: 'e1-3', source: '1', target: '3', animated: true },
-            { id: 'e1-4', source: '1', target: '4', animated: true },
-            { id: 'e2-5', source: '2', target: '5' },
-            { id: 'e3-5', source: '3', target: '5' },
-            { id: 'e4-5', source: '4', target: '5' },
-            { id: 'e5-6', source: '5', target: '6', animated: true }
+            { id: 'e1', source: 'input', target: 'agentA', animated: true },
+            { id: 'e2', source: 'input', target: 'agentB', animated: true },
+            { id: 'e3', source: 'input', target: 'agentC', animated: true },
+            { id: 'e4', source: 'agentA', target: 'mod', label: 'Argumentos' },
+            { id: 'e5', source: 'agentB', target: 'mod', label: 'Ideas' },
+            { id: 'e6', source: 'agentC', target: 'mod', label: 'Feedback' },
+            { id: 'e7', source: 'mod', target: 'output', label: 'Síntesis', animated: true }
         ]
     }
 };

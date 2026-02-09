@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { MessageSquare, Mic, FileText, Wrench, Users, Cloud, Cpu, Database, Zap, GitBranch } from 'lucide-react';
-import { ReactFlow, Background, Controls } from '@xyflow/react';
+import { ReactFlow, Background, Controls, Handle, Position } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { flows } from './UseCaseFlows';
 
@@ -9,7 +9,7 @@ const schemaData = {
         title: 'Asistente IA',
         icon: MessageSquare,
         color: '#F85900',
-        height: '250px',
+        height: '300px',
         description: 'Asistente conversacional potenciado por IA generativa capaz de mantener conversaciones contextuales y resolver consultas en tiempo real.',
         techStack: [
             { icon: Cloud, label: 'Claude API', desc: 'Modelo de lenguaje de Anthropic' },
@@ -21,7 +21,7 @@ const schemaData = {
         title: 'Transcripción Audio',
         icon: Mic,
         color: '#d63384',
-        height: '350px',
+        height: '300px',
         description: 'Sistema de transcripción de audio con análisis de sentimientos integrado. Convierte voz a texto y extrae insights emocionales.',
         techStack: [
             { icon: Mic, label: 'Azure Speech', desc: 'Speech-to-Text de Microsoft' },
@@ -33,7 +33,7 @@ const schemaData = {
         title: 'Digitalización OCR',
         icon: FileText,
         color: '#28a745',
-        height: '350px',
+        height: '300px',
         description: 'Extracción inteligente de texto desde imágenes y documentos. Utiliza visión por computador para digitalizar contenido.',
         techStack: [
             { icon: FileText, label: 'Vision AI', desc: 'Reconocimiento óptico de caracteres' },
@@ -45,7 +45,7 @@ const schemaData = {
         title: 'Soporte Técnico',
         icon: Wrench,
         color: '#003366',
-        height: '350px',
+        height: '450px',
         description: 'Sistema inteligente de gestión de incidencias con búsqueda semántica en base de conocimiento y asistencia guiada por IA.',
         techStack: [
             { icon: Database, label: 'Vector DB', desc: 'Búsqueda semántica de incidencias' },
@@ -57,7 +57,7 @@ const schemaData = {
         title: 'Sala de Brainstorming',
         icon: Users,
         color: '#1a4b8c',
-        height: '350px',
+        height: '500px',
         description: 'Multi-agente colaborativo donde varios modelos de IA debaten y resuelven problemas de forma autónoma con moderación inteligente.',
         techStack: [
             { icon: Users, label: 'Multi-Agent', desc: 'Sistema de agentes colaborativos' },
@@ -90,8 +90,28 @@ const GroupNode = ({ data, style }) => (
     </div>
 );
 
+const ModuleNode = ({ data, style }) => (
+    <div style={style}>
+        {/* Connection Handles (Hidden) */}
+        <Handle type="target" position={Position.Top} id="t" style={{ opacity: 0 }} />
+        <Handle type="target" position={Position.Bottom} id="b" style={{ opacity: 0 }} />
+        <Handle type="target" position={Position.Left} id="l" style={{ opacity: 0 }} />
+        <Handle type="target" position={Position.Right} id="r" style={{ opacity: 0 }} />
+
+        <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {data.label}
+        </div>
+
+        <Handle type="source" position={Position.Top} id="st" style={{ opacity: 0 }} />
+        <Handle type="source" position={Position.Bottom} id="sb" style={{ opacity: 0 }} />
+        <Handle type="source" position={Position.Left} id="sl" style={{ opacity: 0 }} />
+        <Handle type="source" position={Position.Right} id="sr" style={{ opacity: 0 }} />
+    </div>
+);
+
 const nodeTypes = {
-    group: GroupNode
+    group: GroupNode,
+    module: ModuleNode
 };
 
 export default function UseCaseSchema({ moduleId, height }) {
@@ -110,6 +130,7 @@ export default function UseCaseSchema({ moduleId, height }) {
 
         return {
             ...node,
+            type: 'module',
             style: {
                 background: `${data.color}05`,
                 border: `2px solid ${data.color}`,
@@ -121,6 +142,10 @@ export default function UseCaseSchema({ moduleId, height }) {
                 width: 150,
                 textAlign: 'center',
                 boxShadow: 'var(--shadow-sm)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: '40px',
                 ...node.style
             }
         };
