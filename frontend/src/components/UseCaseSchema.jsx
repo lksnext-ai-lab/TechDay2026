@@ -9,6 +9,7 @@ const schemaData = {
         title: 'Asistente IA',
         icon: MessageSquare,
         color: '#F85900',
+        height: '250px',
         description: 'Asistente conversacional potenciado por IA generativa capaz de mantener conversaciones contextuales y resolver consultas en tiempo real.',
         techStack: [
             { icon: Cloud, label: 'Claude API', desc: 'Modelo de lenguaje de Anthropic' },
@@ -20,6 +21,7 @@ const schemaData = {
         title: 'Transcripción Audio',
         icon: Mic,
         color: '#d63384',
+        height: '350px',
         description: 'Sistema de transcripción de audio con análisis de sentimientos integrado. Convierte voz a texto y extrae insights emocionales.',
         techStack: [
             { icon: Mic, label: 'Azure Speech', desc: 'Speech-to-Text de Microsoft' },
@@ -31,6 +33,7 @@ const schemaData = {
         title: 'Digitalización OCR',
         icon: FileText,
         color: '#28a745',
+        height: '350px',
         description: 'Extracción inteligente de texto desde imágenes y documentos. Utiliza visión por computador para digitalizar contenido.',
         techStack: [
             { icon: FileText, label: 'Vision AI', desc: 'Reconocimiento óptico de caracteres' },
@@ -42,6 +45,7 @@ const schemaData = {
         title: 'Soporte Técnico',
         icon: Wrench,
         color: '#003366',
+        height: '350px',
         description: 'Sistema inteligente de gestión de incidencias con búsqueda semántica en base de conocimiento y asistencia guiada por IA.',
         techStack: [
             { icon: Database, label: 'Vector DB', desc: 'Búsqueda semántica de incidencias' },
@@ -53,6 +57,7 @@ const schemaData = {
         title: 'Sala de Brainstorming',
         icon: Users,
         color: '#1a4b8c',
+        height: '350px',
         description: 'Multi-agente colaborativo donde varios modelos de IA debaten y resuelven problemas de forma autónoma con moderación inteligente.',
         techStack: [
             { icon: Users, label: 'Multi-Agent', desc: 'Sistema de agentes colaborativos' },
@@ -89,7 +94,7 @@ const nodeTypes = {
     group: GroupNode
 };
 
-export default function UseCaseSchema({ moduleId }) {
+export default function UseCaseSchema({ moduleId, height }) {
     const data = schemaData[moduleId];
     const flowData = flows[moduleId];
 
@@ -135,7 +140,7 @@ export default function UseCaseSchema({ moduleId }) {
         <div className="usecase-schema">
             {/* Visual Flow Diagram */}
             <div className="schema-diagram" style={{
-                height: '250px',
+                height: height || data.height || '400px',
                 background: 'var(--white)',
                 borderColor: `${data.color}30`,
                 position: 'relative'
