@@ -1,5 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { MessageSquare, Mic, FileText, Wrench, Users, Cloud, Cpu, Database, Zap, GitBranch } from 'lucide-react';
+import { ReactFlow, Background, Controls } from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
+import { flows } from './UseCaseFlows';
 
 const schemaData = {
     chat: {
@@ -11,12 +14,6 @@ const schemaData = {
             { icon: Cloud, label: 'Claude API', desc: 'Modelo de lenguaje de Anthropic' },
             { icon: Zap, label: 'Streaming', desc: 'Respuestas en tiempo real' },
             { icon: Database, label: 'Mattin.ai', desc: 'Plataforma de orquestación' }
-        ],
-        flowSteps: [
-            'Usuario envía mensaje',
-            'Procesamiento contextual',
-            'Generación de respuesta',
-            'Streaming al cliente'
         ]
     },
     audio: {
@@ -28,12 +25,6 @@ const schemaData = {
             { icon: Mic, label: 'Azure Speech', desc: 'Speech-to-Text de Microsoft' },
             { icon: Cpu, label: 'Análisis NLP', desc: 'Procesamiento de lenguaje natural' },
             { icon: Zap, label: 'Real-time', desc: 'Procesamiento en streaming' }
-        ],
-        flowSteps: [
-            'Captura de audio',
-            'Transcripción STT',
-            'Análisis de sentimientos',
-            'Visualización de resultados'
         ]
     },
     ocr: {
@@ -45,12 +36,6 @@ const schemaData = {
             { icon: FileText, label: 'Vision AI', desc: 'Reconocimiento óptico de caracteres' },
             { icon: Cpu, label: 'Claude Vision', desc: 'Análisis multimodal' },
             { icon: Database, label: 'Estructuración', desc: 'Extracción de datos estructurados' }
-        ],
-        flowSteps: [
-            'Captura de imagen',
-            'Preprocesamiento',
-            'Extracción OCR',
-            'Estructuración de datos'
         ]
     },
     sat: {
@@ -62,12 +47,6 @@ const schemaData = {
             { icon: Database, label: 'Vector DB', desc: 'Búsqueda semántica de incidencias' },
             { icon: Cpu, label: 'RAG', desc: 'Retrieval Augmented Generation' },
             { icon: GitBranch, label: 'Workflows', desc: 'Flujos de resolución guiados' }
-        ],
-        flowSteps: [
-            'Registro de incidencia',
-            'Búsqueda de similares',
-            'Análisis con IA',
-            'Propuesta de solución'
         ]
     },
     swarm: {
@@ -79,47 +58,103 @@ const schemaData = {
             { icon: Users, label: 'Multi-Agent', desc: 'Sistema de agentes colaborativos' },
             { icon: Cpu, label: 'Moderador IA', desc: 'Orquestación de debate' },
             { icon: Zap, label: 'Real-time', desc: 'Debate en tiempo real' }
-        ],
-        flowSteps: [
-            'Planteamiento del reto',
-            'Debate multi-agente',
-            'Síntesis de ideas',
-            'Conclusión moderada'
         ]
     }
 };
 
-const UseCaseSchema = ({ moduleId }) => {
-    const data = schemaData[moduleId];
+const GroupNode = ({ data, style }) => (
+    <div style={{
+        ...style,
+        padding: '10px',
+        position: 'relative',
+        height: '100%',
+        width: '100%',
+    }}>
+        <div style={{
+            position: 'absolute',
+            top: -25,
+            left: 0,
+            fontSize: '12px',
+            fontWeight: 'bold',
+            color: 'var(--primary)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px'
+        }}>
+            {data.label}
+        </div>
+    </div>
+);
 
-    if (!data) {
+const nodeTypes = {
+    group: GroupNode
+};
+
+export default function UseCaseSchema({ moduleId }) {
+    const data = schemaData[moduleId];
+    const flowData = flows[moduleId];
+
+    if (!data || !flowData) {
         return <p>Schema no disponible para este módulo.</p>;
     }
 
     const Icon = data.icon;
 
+    // Enhance nodes with colors (skip groups or nodes with specific styles)
+    const nodes = useMemo(() => flowData.nodes.map(node => {
+        if (node.type === 'group') return node;
+
+        return {
+            ...node,
+            style: {
+                background: `${data.color}05`,
+                border: `2px solid ${data.color}`,
+                borderRadius: '12px',
+                padding: '10px',
+                fontSize: '0.8rem',
+                fontWeight: '600',
+                color: 'var(--text-main)',
+                width: 150,
+                textAlign: 'center',
+                boxShadow: 'var(--shadow-sm)',
+                ...node.style
+            }
+        };
+    }), [flowData.nodes, data.color]);
+
+    const edges = useMemo(() => flowData.edges.map(edge => ({
+        ...edge,
+        style: { stroke: data.color, strokeWidth: 2 },
+        type: 'smoothstep',
+        labelStyle: { fill: data.color, fontWeight: '700', fontSize: '10px' },
+        labelBgPadding: [8, 4],
+        labelBgBorderRadius: 4,
+        labelBgStyle: { fill: 'var(--white)', fillOpacity: 0.8 }
+    })), [flowData.edges, data.color]);
+
     return (
         <div className="usecase-schema">
             {/* Visual Flow Diagram */}
-            <div className="schema-diagram" style={{ borderColor: `${data.color}30` }}>
-                <div className="schema-flow">
-                    {data.flowSteps.map((step, index) => (
-                        <React.Fragment key={index}>
-                            <div className="flow-step" style={{
-                                background: `${data.color}10`,
-                                borderColor: data.color
-                            }}>
-                                <span className="step-number" style={{ background: data.color }}>
-                                    {index + 1}
-                                </span>
-                                <span className="step-text">{step}</span>
-                            </div>
-                            {index < data.flowSteps.length - 1 && (
-                                <div className="flow-arrow" style={{ color: data.color }}>→</div>
-                            )}
-                        </React.Fragment>
-                    ))}
-                </div>
+            <div className="schema-diagram" style={{
+                height: '250px',
+                background: 'var(--white)',
+                borderColor: `${data.color}30`,
+                position: 'relative'
+            }}>
+                <ReactFlow
+                    nodes={nodes}
+                    edges={edges}
+                    nodeTypes={nodeTypes}
+                    fitView
+                    nodesDraggable={true}
+                    nodesConnectable={false}
+                    elementsSelectable={true}
+                    panOnDrag={true}
+                    zoomOnScroll={true}
+                    attributionPosition="bottom-right"
+                >
+                    <Background color="#f0f0f0" gap={20} />
+                    <Controls showInteractive={false} />
+                </ReactFlow>
             </div>
 
             {/* Description */}
@@ -153,7 +188,6 @@ const UseCaseSchema = ({ moduleId }) => {
             </div>
         </div>
     );
-};
+}
 
 export { schemaData };
-export default UseCaseSchema;
