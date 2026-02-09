@@ -134,7 +134,6 @@ async def search_mattin_incidents(app_id: int, silo_id: str, query: str, machine
             response = await client.post(url, headers=headers, json=payload)
             response.raise_for_status()
             data = response.json()
-            # print(f"DEBUG: Search response: {data}")
             return data.get("docs", [])
         except Exception as e:
             print(f"ERROR SEARCHING MATTIN INCIDENTS: {str(e)}")
@@ -456,13 +455,18 @@ async def get_similar_incidents(incident_id: str, app_id: Optional[int] = None, 
     
     similar_docs = await search_mattin_incidents(app_id, silo_id, query_text, machine_type)
     
-    # Extract IDs and map to scores
+    # Extract IDs and map to similarity scores
     similar_map = {}
     for doc in similar_docs:
         meta = doc.get("metadata", {})
         inc_id = meta.get("incident_id")
         if inc_id and inc_id != incident_id:
-            similar_map[inc_id] = doc.get("score", 0)
+            # Score is returned as _score inside metadata by the Mattin API
+            # The score is a distance (0 = identical, higher = more different)
+            # Convert to similarity: 1 - distance (capped at 0-1 range)
+            distance = meta.get("_score", 0)
+            similarity = max(0, min(1, 1 - distance)) if distance else 0
+            similar_map[inc_id] = similarity
             
     if not similar_map:
         return []
