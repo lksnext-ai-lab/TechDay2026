@@ -70,6 +70,17 @@ export const ConfigProvider = ({ children }) => {
         return defaults;
     });
 
+    // Audio Config
+    const [audioConfig, setAudioConfig] = useState(() => {
+        const saved = localStorage.getItem('lks_techday_audio_config');
+        if (saved) {
+            return JSON.parse(saved);
+        }
+        return {
+            agentId: ''
+        };
+    });
+
     // OCR Config
     const [ocrConfig, setOcrConfig] = useState(() => {
         const saved = localStorage.getItem('lks_techday_ocr_config');
@@ -99,6 +110,10 @@ export const ConfigProvider = ({ children }) => {
     }, [satConfig]);
 
     useEffect(() => {
+        localStorage.setItem('lks_techday_audio_config', JSON.stringify(audioConfig));
+    }, [audioConfig]);
+
+    useEffect(() => {
         localStorage.setItem('lks_techday_ocr_config', JSON.stringify(ocrConfig));
     }, [ocrConfig]);
 
@@ -112,6 +127,10 @@ export const ConfigProvider = ({ children }) => {
 
     const updateSatConfig = (newConfig) => {
         setSatConfig(prev => ({ ...prev, ...newConfig }));
+    };
+
+    const updateAudioConfig = (newConfig) => {
+        setAudioConfig(prev => ({ ...prev, ...newConfig }));
     };
 
     const updateOcrConfig = (newConfig) => {
@@ -151,6 +170,8 @@ export const ConfigProvider = ({ children }) => {
         updateSwarmConfig,
         satConfig,
         updateSatConfig,
+        audioConfig,
+        updateAudioConfig,
         ocrConfig,
         updateOcrConfig,
         modulesStatus,

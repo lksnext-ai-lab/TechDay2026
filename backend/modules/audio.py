@@ -1,13 +1,17 @@
 import os
 import time
 import uuid
+import httpx
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request, Query
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from database import get_db
 import models
 import schemas
+
+MATTIN_URL = os.getenv("MATTIN_URL", "http://localhost:8000")
+API_KEY = os.getenv("API_KEY")
 
 router = APIRouter(prefix="/api/audio", tags=["audio"])
 
@@ -36,35 +40,79 @@ async def upload_audio(file: UploadFile = File(...), db: Session = Depends(get_d
     return db_transcription
 
 @router.post("/transcribe/{transcription_id}", response_model=schemas.Transcription)
-async def transcribe_audio(transcription_id: int, db: Session = Depends(get_db)):
+async def transcribe_audio(
+    transcription_id: int, 
+    db: Session = Depends(get_db),
+    app_id: int = Query(..., description="Mattin Application ID"),
+    agent_id: int = Query(..., description="Mattin Agent ID")
+):
     db_transcription = db.query(models.Transcription).filter(models.Transcription.id == transcription_id).first()
     if not db_transcription:
         raise HTTPException(status_code=404, detail="Transcription not found")
     
-    # MOCK MATTIN AI RESPONSE
-    # In a real scenario, we would send the file to Mattin AI here.
-    # For now, we return a mock transcription and sentiment.
+    # Get the file path
+    file_path = os.path.join(UPLOAD_DIR, db_transcription.filename)
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Audio file not found")
     
-    time.sleep(1) # Simulate processing time
-    
-    mock_responses = [
-        {"transcription": "Hola, esto es una prueba de grabación de audio para el Tech Day.", "sentiment": "neutral"},
-        {"transcription": "Me encanta la nueva plataforma de Mattin AI, es súper útil.", "sentiment": "positive"},
-        {"transcription": "No entiendo por qué no funciona el botón de subir archivos.", "sentiment": "negative"},
-        {"transcription": "Buenos días, me gustaría solicitar información sobre los próximos eventos.", "sentiment": "neutral"}
-    ]
-    
-    # Pick a random response or just the first one for simplicity
-    import random
-    mock_data = random.choice(mock_responses)
-    
-    db_transcription.content = mock_data["transcription"]
-    db_transcription.sentiment = mock_data["sentiment"]
-    
-    db.commit()
-    db.refresh(db_transcription)
-    
-    return db_transcription
+    try:
+        # Call Mattin AI agent endpoint with the file
+        url = f"{MATTIN_URL}/public/v1/app/{app_id}/chat/{agent_id}/call"
+        headers = {"X-API-KEY": API_KEY}
+        
+        # Prepare the multipart form data
+        with open(file_path, "rb") as audio_file:
+            files = {"files": (db_transcription.filename, audio_file, "audio/webm")}
+            data = {
+                "message": "Por favor, obtén el path de este archivo de audio. Después, transcribe el audio y analiza el sentimiento (positivo, negativo o neutral). Responde SOLO con un JSON en este formato: {\"transcription\": \"texto transcrito\", \"sentiment\": \"positivo/negativo/neutral\"}"
+            }
+            
+            async with httpx.AsyncClient(timeout=120.0) as client:
+                response = await client.post(url, headers=headers, files=files, data=data)
+        
+        if response.status_code != 200:
+            raise HTTPException(
+                status_code=response.status_code, 
+                detail=f"Mattin AI error: {response.text}"
+            )
+        
+        mattin_response = response.json()
+        
+        # Extract the agent's response
+        agent_message = mattin_response.get("response", "")
+        
+        # Try to parse JSON from the response
+        import json
+        try:
+            # Try to find JSON in the response
+            import re
+            json_match = re.search(r'\{[^}]*"transcription"[^}]*"sentiment"[^}]*\}', agent_message)
+            if json_match:
+                parsed_data = json.loads(json_match.group())
+                db_transcription.content = parsed_data.get("transcription", agent_message)
+                sentiment = parsed_data.get("sentiment", "neutral").lower()
+                # Map Spanish to English if needed
+                sentiment_map = {"positivo": "positive", "negativo": "negative", "neutral": "neutral"}
+                db_transcription.sentiment = sentiment_map.get(sentiment, sentiment)
+            else:
+                # If no JSON found, use the full response as transcription
+                db_transcription.content = agent_message
+                db_transcription.sentiment = "neutral"
+        except Exception as parse_error:
+            print(f"Error parsing agent response: {parse_error}")
+            # Fallback: use the raw response
+            db_transcription.content = agent_message
+            db_transcription.sentiment = "neutral"
+        
+        db.commit()
+        db.refresh(db_transcription)
+        
+        return db_transcription
+        
+    except httpx.HTTPError as e:
+        raise HTTPException(status_code=500, detail=f"Error calling Mattin AI: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing transcription: {str(e)}")
 
 @router.get("/transcriptions", response_model=List[schemas.Transcription])
 def get_transcriptions(db: Session = Depends(get_db)):
