@@ -10,7 +10,7 @@ from database import get_db
 import models
 import schemas
 
-MATTIN_URL = os.getenv("MATTIN_URL", "http://localhost:8000")
+MATTIN_URL = os.getenv("MATTIN_URL", "http://172.20.166.30")
 API_KEY = os.getenv("API_KEY")
 
 router = APIRouter(prefix="/api/audio", tags=["audio"])
