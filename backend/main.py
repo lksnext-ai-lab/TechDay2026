@@ -4,11 +4,11 @@ from typing import List, Optional
 from fastapi import FastAPI, Request, HTTPException, Depends, UploadFile, File, Query, Form
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
 import shutil
 import glob
 from sqlalchemy.orm import Session
 
+import config
 from database import engine, Base, get_db
 import models
 import schemas
@@ -17,8 +17,7 @@ from modules import swarm, audio, mcp, sat
 # Create tables (already managed by alembic, but good to have)
 # Base.metadata.create_all(bind=engine)
 
-dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
-load_dotenv(dotenv_path=dotenv_path)
+# Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="LKS Tech Day BFF")
 
@@ -33,25 +32,24 @@ app.add_middleware(
 )
 
 # Ensure uploads directory exists
-UPLOADS_DIR = "uploads"
-if not os.path.exists(UPLOADS_DIR):
-    os.makedirs(UPLOADS_DIR)
+if not os.path.exists(config.UPLOADS_DIR):
+    os.makedirs(config.UPLOADS_DIR)
 
-app.mount("/uploads", StaticFiles(directory=UPLOADS_DIR), name="uploads")
+app.mount("/uploads", StaticFiles(directory=config.UPLOADS_DIR), name="uploads")
 
 app.include_router(swarm.router)
 app.include_router(audio.router)
 app.include_router(mcp.router)
 app.include_router(sat.router)
 
-MATTIN_URL = os.getenv("MATTIN_URL", "https://aict-desa.lksnext.com")
-API_KEY = os.getenv("API_KEY")
+MATTIN_URL = config.MATTIN_URL
+API_KEY = config.API_KEY
 
 @app.on_event("startup")
 async def startup_event():
     print("="*50)
-    print(f"LOADING ENV FROM: {dotenv_path}")
-    print(f"MATTIN_URL: {MATTIN_URL}")
+    print(f"LOADING CONFIG FROM: {config.BASE_DIR}")
+    print(f"MATTIN_URL: {config.MATTIN_URL}")
     if API_KEY:
         print(f"API_KEY: LOADED (Length: {len(API_KEY)})")
     else:

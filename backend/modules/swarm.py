@@ -1,12 +1,12 @@
-import os
 import httpx
 from typing import List, Dict, Any
 from fastapi import APIRouter, HTTPException, Request
+import config
 
 router = APIRouter(prefix="/api/swarm", tags=["swarm"])
 
-MATTIN_URL = os.getenv("MATTIN_URL", "https://aict-desa.lksnext.com")
-API_KEY = os.getenv("API_KEY")
+MATTIN_URL = config.MATTIN_URL
+API_KEY = config.API_KEY
 
 @router.post("/process_turn")
 async def process_turn(request: Request):
