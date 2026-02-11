@@ -3,7 +3,7 @@ import time
 import uuid
 import httpx
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request, Query
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from database import get_db
