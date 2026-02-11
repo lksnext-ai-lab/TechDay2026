@@ -72,13 +72,19 @@ export const ConfigProvider = ({ children }) => {
 
     // Audio Config
     const [audioConfig, setAudioConfig] = useState(() => {
-        const saved = localStorage.getItem('lks_techday_audio_config');
-        if (saved) {
-            return JSON.parse(saved);
-        }
-        return {
+        const defaults = {
             agentId: ''
         };
+        const saved = localStorage.getItem('lks_techday_audio_config');
+        if (saved) {
+            try {
+                return { ...defaults, ...JSON.parse(saved) };
+            } catch (e) {
+                console.error("Error parsing audio config", e);
+                return defaults;
+            }
+        }
+        return defaults;
     });
 
     // OCR Config
