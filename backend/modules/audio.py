@@ -64,7 +64,7 @@ async def transcribe_audio(
         with open(file_path, "rb") as audio_file:
             files = {"files": (db_transcription.filename, audio_file, "audio/webm")}
             data = {
-                "message": "Por favor, obtén el path de este archivo de audio. Después, transcribe el audio y analiza el sentimiento (positivo, negativo o neutral). Responde SOLO con un JSON en este formato: {\"transcription\": \"texto transcrito\", \"sentiment\": \"positivo/negativo/neutral\"}"
+                "message": "Por favor, obtén el path ABSOLUTO de este archivo de audio. Después, transcribe el audio y analiza el sentimiento (positivo, negativo o neutral). Responde SOLO con un JSON en este formato: {\"transcription\": \"texto transcrito\", \"sentiment\": \"positivo/negativo/neutral\"}"
             }
             
             async with httpx.AsyncClient(timeout=120.0) as client:
