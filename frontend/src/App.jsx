@@ -13,7 +13,7 @@ import AudioModule from './modules/audio/AudioModule';
 
 function App() {
   return (
-    <Router>
+    <Router basename={import.meta.env.VITE_BASE_PATH || '/'}>
       <ConfigProvider>
         <Routes>
           <Route path="/" element={<Layout />}>
