@@ -158,7 +158,7 @@ const Home = () => {
                         <h4 style={{ margin: 0, fontSize: '0.7rem' }}>IMPULSADO POR</h4>
                         <div className="logo-grid" style={{ flexDirection: 'column', gap: '1rem' }}>
                             <div className="logo-badge" style={{ width: '100%' }}>
-                                <img src="/gitlab_duo.png" alt="GitLab Duo" />
+                                <img src="/gitlab_logo.png" alt="GitLab" />
                             </div>
                         </div>
                     </div>
