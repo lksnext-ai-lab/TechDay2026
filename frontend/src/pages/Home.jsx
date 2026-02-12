@@ -138,17 +138,17 @@ const Home = () => {
                         <div className="logo-grid" style={{ flexDirection: 'column', gap: '1rem' }}>
                             <div className="logo-badge" style={{ width: '100%' }}>
                                 <a href="http://mattin.ai" target="_blank" rel="noopener noreferrer">
-                                    <img src="/mattin_logo.svg" alt="Mattin AI" />
+                                    <img src={`${import.meta.env.BASE_URL}/mattin_logo.svg`} alt="Mattin AI" />
                                 </a>
                             </div>
                             <div className="logo-badge" style={{ width: '100%' }}>
                                 <a href="https://azure.microsoft.com/" target="_blank" rel="noopener noreferrer">
-                                    <img src="/azure_logo.png" alt="Microsoft Azure" />
+                                    <img src={`${import.meta.env.BASE_URL}/azure_logo.png`} alt="Microsoft Azure" />
                                 </a>
                             </div>
                             <div className="logo-badge" style={{ width: '100%' }}>
                                 <a href="https://aws.amazon.com/bedrock/" target="_blank" rel="noopener noreferrer">
-                                    <img src="/bedrock_logo.png" alt="AWS Bedrock" />
+                                    <img src={`${import.meta.env.BASE_URL}/bedrock_logo.png`} alt="AWS Bedrock" />
                                 </a>
                             </div>
                         </div>
@@ -158,7 +158,7 @@ const Home = () => {
                         <h4 style={{ margin: 0, fontSize: '0.7rem' }}>IMPULSADO POR</h4>
                         <div className="logo-grid" style={{ flexDirection: 'column', gap: '1rem' }}>
                             <div className="logo-badge" style={{ width: '100%' }}>
-                                <img src="/gitlab_logo.png" alt="GitLab" />
+                                <img src={`${import.meta.env.BASE_URL}/gitlab_logo.png`} alt="GitLab" />
                             </div>
                         </div>
                     </div>
