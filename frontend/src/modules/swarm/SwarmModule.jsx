@@ -1,34 +1,59 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useConfig } from '../../context/ConfigContext';
-import { ArrowLeft, Play, Send, Bot, User, Brain, Info, CheckCircle, RefreshCcw } from 'lucide-react';
+import { ArrowLeft, Play, Send, Bot, User, Brain, RefreshCcw, Sparkles, MessageSquare, MessagesSquare } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import SchemaInfoButton from '../../components/SchemaInfoButton';
+import SwarmFlow from './components/SwarmFlow';
+import './SwarmModule.css';
+
+/* ── Fake "reasoning" lines shown while an agent is thinking ── */
+const THINKING_PHRASES = [
+    'Analizando el contexto del problema…',
+    'Evaluando las perspectivas de los otros agentes…',
+    'Considerando restricciones y oportunidades…',
+    'Formulando mi posición basada en evidencia…',
+    'Conectando datos con el historial del debate…',
+    'Sintetizando una respuesta coherente…',
+    'Revisando mis conclusiones antes de responder…',
+];
+
+const pickThinkingPhrase = () =>
+    THINKING_PHRASES[Math.floor(Math.random() * THINKING_PHRASES.length)];
 
 const SwarmModule = () => {
     const { globalAppId, swarmConfig, apiConfig } = useConfig();
-    const [phase, setPhase] = useState('input'); // input, debating, user_turn, finished
+
+    // ── State ──
+    const [phase, setPhase] = useState('input');        // input | debating | user_turn | summarizing | finished
+    const [mode, setMode] = useState('single');          // single | discussion
     const [topic, setTopic] = useState('');
     const [messages, setMessages] = useState([]);
-    const [isProcessing, setIsProcessing] = useState(false);
-    const [activeAgentIndex, setActiveAgentIndex] = useState(-1);
+    const [thinkingAgent, setThinkingAgent] = useState(null);
+    const [activeAgentId, setActiveAgentId] = useState(null);
+    const [doneAgentIds, setDoneAgentIds] = useState(new Set());
+    const [moderatorActive, setModeratorActive] = useState(false);
     const [userInput, setUserInput] = useState('');
+    const [discussionRound, setDiscussionRound] = useState(0);
     const messagesEndRef = useRef(null);
+    const turnCountRef = useRef(0);
+    const abortRef = useRef(false);
 
     const activeAgents = swarmConfig.agents.filter(a => a.isActive);
+    const moderatorConfigured = !!swarmConfig.moderatorAgentId;
 
-    const scrollToBottom = () => {
+    // ── Scroll ──
+    const scrollToBottom = useCallback(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    };
+    }, []);
 
     useEffect(() => {
         scrollToBottom();
-    }, [messages, activeAgentIndex, phase]);
+    }, [messages, thinkingAgent, scrollToBottom]);
 
-    // ... (rest of the state and scroll logic)
-
-    const resetAgents = async () => {
+    // ── Reset agents on mount ──
+    const resetAgents = useCallback(async () => {
         try {
             const allToReset = [...activeAgents];
             if (swarmConfig.moderatorAgentId) {
@@ -37,92 +62,162 @@ const SwarmModule = () => {
             await fetch(`${apiConfig.baseUrl}/api/swarm/reset_session`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ appId: globalAppId, agents: allToReset })
+                body: JSON.stringify({ appId: globalAppId, agents: allToReset }),
             });
-        } catch (error) {
-            console.error("Error resetting session:", error);
+        } catch (err) {
+            console.error('Error resetting session:', err);
         }
-    };
+    }, [activeAgents, swarmConfig.moderatorAgentId, apiConfig.baseUrl, globalAppId]);
 
-    // Reset on mount
     useEffect(() => {
         resetAgents();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const startDebate = async (e) => {
         e.preventDefault();
         if (!topic.trim()) return;
 
+        abortRef.current = false;
         setPhase('debating');
-        const initialMessage = { sender: 'Usuario', text: topic, type: 'user' };
-        setMessages([initialMessage]);
-        setIsProcessing(true);
+        const initial = { sender: 'Usuario', text: topic, type: 'user' };
+        setMessages([initial]);
+        turnCountRef.current = 0;
+        setDoneAgentIds(new Set());
+        setDiscussionRound(0);
 
-        // Initiate the turn loop
-        runSwarmLoop(initialMessage, [initialMessage], 0);
+        if (mode === 'discussion') {
+            runDiscussionLoop(initial, [initial], 0);
+        } else {
+            runSwarmLoop(initial, [initial], 0);
+        }
     };
 
+    // ════════════════════ SINGLE MODE (Original) ════════════════════
+
     const runSwarmLoop = async (lastMsg, currentHistory, turnCount) => {
-        // Stop if we exceed a maximum number of turns to prevent infinite loops/cost
-        if (turnCount >= 10 || phase === 'finished') {
+        if (abortRef.current) return;
+        if (turnCount >= 10) {
             finishDebate();
             return;
         }
+        turnCountRef.current = turnCount;
 
-        setActiveAgentIndex(-1);
+        setActiveAgentId(null);
 
         try {
-            // 1. Ask Moderator who's next
-            if (!swarmConfig.moderatorAgentId) {
-                // Support legacy linear mode if no moderator is configured
+            if (!moderatorConfigured) {
                 const nextIdx = turnCount % activeAgents.length;
-                processAgentTurn(activeAgents[nextIdx], currentHistory, turnCount);
+                processAgentTurn(activeAgents[nextIdx], currentHistory, turnCount, 'single');
                 return;
             }
 
-            const modResponse = await fetch(`${apiConfig.baseUrl}/api/swarm/decide_next`, {
+            // Show moderator is thinking
+            setModeratorActive(true);
+
+            const modRes = await fetch(`${apiConfig.baseUrl}/api/swarm/decide_next`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     appId: globalAppId,
                     moderatorAgentId: swarmConfig.moderatorAgentId,
                     history: currentHistory.map(m => ({ sender: m.sender, text: m.text })),
-                    availableAgents: activeAgents.map(a => ({ id: a.id, name: a.name, description: a.description }))
-                })
+                    availableAgents: activeAgents.map(a => ({ id: a.id, name: a.name, description: a.description })),
+                    mode: 'single',
+                    turnCount: turnCount,
+                }),
             });
 
-            if (!modResponse.ok) throw new Error("Error en el moderador");
-            const decision = await modResponse.json();
+            setModeratorActive(false);
 
-            if (decision.next === 'fin') {
-                finishDebate();
-                return;
-            }
+            if (!modRes.ok) throw new Error('Error en el moderador');
+            const decision = await modRes.json();
 
+            if (decision.next === 'fin') { finishDebate(); return; }
             if (decision.next === 'you') {
                 setPhase('user_turn');
-                setIsProcessing(false);
                 return;
             }
 
-            const nextAgent = activeAgents.find(a => a.id === decision.next);
-            if (!nextAgent) {
-                // Fallback if moderator hallucinates an ID
-                const fallback = activeAgents[turnCount % activeAgents.length];
-                processAgentTurn(fallback, currentHistory, turnCount);
-            } else {
-                processAgentTurn(nextAgent, currentHistory, turnCount);
-            }
+            const nextAgent = activeAgents.find(a => a.id === decision.next)
+                || activeAgents[turnCount % activeAgents.length];
 
-        } catch (error) {
-            console.error("Moderator flow error:", error);
+            processAgentTurn(nextAgent, currentHistory, turnCount, 'single');
+        } catch (err) {
+            console.error('Moderator flow error:', err);
+            setModeratorActive(false);
             finishDebate();
         }
     };
 
-    const processAgentTurn = async (agent, currentHistory, turnCount) => {
-        const agentIndex = activeAgents.findIndex(a => a.id === agent.id);
-        setActiveAgentIndex(agentIndex);
+    // ════════════════════ DISCUSSION MODE (New) ════════════════════
+
+    const runDiscussionLoop = async (_lastMsg, currentHistory, turnCount) => {
+        if (abortRef.current) return;
+        const MAX_DISCUSSION_TURNS = 10;
+
+        if (turnCount >= MAX_DISCUSSION_TURNS) {
+            summarizeDiscussion(currentHistory);
+            return;
+        }
+
+        turnCountRef.current = turnCount;
+        setActiveAgentId(null);
+
+        try {
+            if (!moderatorConfigured) {
+                const nextIdx = turnCount % activeAgents.length;
+                processAgentTurn(activeAgents[nextIdx], currentHistory, turnCount, 'discussion');
+                return;
+            }
+
+            setModeratorActive(true);
+
+            const modRes = await fetch(`${apiConfig.baseUrl}/api/swarm/decide_next`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    appId: globalAppId,
+                    moderatorAgentId: swarmConfig.moderatorAgentId,
+                    history: currentHistory.map(m => ({ sender: m.sender, text: m.text })),
+                    availableAgents: activeAgents.map(a => ({ id: a.id, name: a.name, description: a.description })),
+                    mode: 'discussion',
+                    turnCount: turnCount,
+                }),
+            });
+
+            setModeratorActive(false);
+            if (!modRes.ok) throw new Error('Error en el moderador');
+            const decision = await modRes.json();
+
+            if (decision.next === 'fin') {
+                summarizeDiscussion(currentHistory);
+                return;
+            }
+
+            const nextAgent = activeAgents.find(a => a.id === decision.next)
+                || activeAgents[turnCount % activeAgents.length];
+
+            processAgentTurn(nextAgent, currentHistory, turnCount, 'discussion');
+        } catch (err) {
+            console.error('Discussion moderator error:', err);
+            setModeratorActive(false);
+            summarizeDiscussion(currentHistory);
+        }
+    };
+
+    // ════════════════════ SHARED: Process Agent Turn ════════════════════
+
+    const processAgentTurn = async (agent, currentHistory, turnCount, currentMode) => {
+        if (abortRef.current) return;
+        setActiveAgentId(agent.id);
+
+        // Show "thinking" indicator in the chat
+        setThinkingAgent({
+            name: agent.name,
+            color: agent.color,
+            phrase: pickThinkingPhrase(),
+        });
 
         try {
             const response = await fetch(`${apiConfig.baseUrl}/api/swarm/process_turn`, {
@@ -130,35 +225,108 @@ const SwarmModule = () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     appId: globalAppId,
-                    agent: agent,
+                    agent,
                     history: currentHistory,
-                    userPrompt: turnCount === 0 ? topic : ""
-                })
+                    userPrompt: turnCount === 0 ? topic : '',
+                }),
             });
 
-            if (!response.ok) throw new Error("Error en el turno del agente");
-
+            if (abortRef.current) return;
+            if (!response.ok) throw new Error('Error en el turno del agente');
             const data = await response.json();
+
+            // Clear thinking, commit message directly
+            setThinkingAgent(null);
+
             const newMessage = {
                 sender: agent.name,
                 text: data.response,
                 agentId: agent.agentId,
                 color: agent.color,
-                type: 'agent'
+                type: 'agent',
             };
 
             const nextHistory = [...currentHistory, newMessage];
-            setMessages(nextHistory);
+            setMessages((msgs) => [...msgs, newMessage]);
 
-            // After one agent responds, it's always the user's turn
-            setTimeout(() => {
-                setActiveAgentIndex(-1);
-                setPhase('user_turn');
-                setIsProcessing(false);
-            }, 1000);
+            // Mark agent as done
+            setDoneAgentIds((prev) => {
+                const next = new Set(prev);
+                next.add(agent.id);
+                return next;
+            });
 
-        } catch (error) {
-            console.error("Turn error:", error);
+            setDiscussionRound(prev => prev + 1);
+
+            // Decide what happens next based on mode
+            if (currentMode === 'discussion') {
+                // In discussion mode: continue the loop automatically
+                setTimeout(() => {
+                    setActiveAgentId(null);
+                    runDiscussionLoop(newMessage, nextHistory, turnCount + 1);
+                }, 600);
+            } else {
+                // In single mode: expert answered → give control back to user
+                setTimeout(() => {
+                    setActiveAgentId(null);
+                    setPhase('user_turn');
+                }, 600);
+            }
+        } catch (err) {
+            console.error('Turn error:', err);
+            setThinkingAgent(null);
+            if (currentMode === 'discussion') {
+                summarizeDiscussion(currentHistory);
+            } else {
+                finishDebate();
+            }
+        }
+    };
+
+    // ════════════════════ DISCUSSION: Summarize ════════════════════
+
+    const summarizeDiscussion = async (currentHistory) => {
+        if (abortRef.current) return;
+        setPhase('summarizing');
+        setActiveAgentId(null);
+        setModeratorActive(true);
+        setThinkingAgent({
+            name: 'Moderador',
+            color: '#F85900',
+            phrase: 'Sintetizando las conclusiones del debate…',
+        });
+
+        try {
+            const res = await fetch(`${apiConfig.baseUrl}/api/swarm/discussion_summarize`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    appId: globalAppId,
+                    moderatorAgentId: swarmConfig.moderatorAgentId,
+                    history: currentHistory.map(m => ({ sender: m.sender, text: m.text })),
+                    userPrompt: topic,
+                }),
+            });
+
+            setThinkingAgent(null);
+            setModeratorActive(false);
+
+            if (!res.ok) throw new Error('Error al resumir');
+            const data = await res.json();
+
+            const summaryMsg = {
+                sender: 'Moderador — Síntesis Final',
+                text: data.summary,
+                type: 'summary',
+                color: '#F85900',
+            };
+
+            setMessages(msgs => [...msgs, summaryMsg]);
+            setPhase('finished');
+        } catch (err) {
+            console.error('Summarize error:', err);
+            setThinkingAgent(null);
+            setModeratorActive(false);
             finishDebate();
         }
     };
@@ -167,241 +335,231 @@ const SwarmModule = () => {
         e.preventDefault();
         if (!userInput.trim()) return;
 
-        const newMessage = { sender: 'Usuario', text: userInput, type: 'user' };
-        const nextHistory = [...messages, newMessage];
+        const newMsg = { sender: 'Usuario', text: userInput, type: 'user' };
+        const nextHistory = [...messages, newMsg];
         setMessages(nextHistory);
         setUserInput('');
         setPhase('debating');
-        setIsProcessing(true);
 
-        // Continue the loop
-        runSwarmLoop(newMessage, nextHistory, 0);
+        if (mode === 'discussion') {
+            runDiscussionLoop(newMsg, nextHistory, 0);
+        } else {
+            runSwarmLoop(newMsg, nextHistory, 0);
+        }
     };
 
     const finishDebate = () => {
-        setIsProcessing(false);
-        setActiveAgentIndex(-1);
+        setActiveAgentId(null);
+        setModeratorActive(false);
+        setThinkingAgent(null);
         setPhase('finished');
     };
 
     const reset = () => {
+        abortRef.current = true;
         setPhase('input');
         setTopic('');
         setMessages([]);
-        setActiveAgentIndex(-1);
-        setIsProcessing(false);
+        setThinkingAgent(null);
+        setActiveAgentId(null);
+        setDoneAgentIds(new Set());
+        setModeratorActive(false);
+        setDiscussionRound(0);
+        turnCountRef.current = 0;
+        resetAgents();
     };
 
+    // ════════════════════ RENDER ════════════════════
+
     return (
-        <div className="container" style={{ padding: '2rem 1rem', maxWidth: '1000px', margin: '0 auto', minHeight: 'calc(100vh - 80px)' }}>
-            {/* Header */}
-            <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div className="swarm-container">
+            {/* ── Header ── */}
+            <div className="swarm-header">
+                <div className="swarm-header-left">
                     <Link to="/" className="btn" style={{ background: 'var(--accent)', padding: '0.5rem' }}>
                         <ArrowLeft size={20} color="var(--text-main)" />
                     </Link>
-                    <div>
-                        <h2 style={{ margin: 0, color: 'var(--primary)', lineHeight: 1 }}>{swarmConfig.title}</h2>
-                        <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Multi-Agent Collaboration</span>
+                    <div className="swarm-header-title">
+                        <h2>{swarmConfig.title}</h2>
+                        <span>Multi-Agent Collaboration</span>
                     </div>
                     <SchemaInfoButton moduleId="swarm" />
                 </div>
                 {phase !== 'input' && (
-                    <button onClick={reset} className="btn" style={{ background: 'var(--accent)', fontSize: '0.9rem' }}>
-                        <RefreshCcw size={16} /> Reiniciar
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <span className={`swarm-mode-badge swarm-mode-badge--${mode}`}>
+                            {mode === 'single' ? (
+                                <><MessageSquare size={14} /> Consulta directa</>
+                            ) : (
+                                <><MessagesSquare size={14} /> Mesa de debate</>
+                            )}
+                        </span>
+                        {mode === 'discussion' && phase === 'debating' && (
+                            <span className="swarm-round-badge">
+                                Turno {discussionRound}
+                            </span>
+                        )}
+                        <button onClick={reset} className="btn" style={{ background: 'var(--accent)', fontSize: '0.9rem' }}>
+                            <RefreshCcw size={16} /> Reiniciar
+                        </button>
+                    </div>
                 )}
             </div>
 
+            {/* ══════════ INPUT PHASE ══════════ */}
             {phase === 'input' && (
-                <div style={{
-                    background: 'white',
-                    padding: '3rem',
-                    borderRadius: 'var(--radius-lg)',
-                    boxShadow: 'var(--shadow-lg)',
-                    textAlign: 'center',
-                    marginTop: '2rem'
-                }}>
-                    <div style={{
-                        background: 'var(--primary)15',
-                        width: '80px', height: '80px',
-                        borderRadius: '50%',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        margin: '0 auto 2rem',
-                        color: 'var(--primary)'
-                    }}>
+                <div className="swarm-input-card">
+                    <div className="swarm-input-icon">
                         <Brain size={40} />
                     </div>
-                    <h3 style={{ fontSize: '1.75rem', marginBottom: '1rem' }}>Plantea un Reto al Equipo</h3>
-                    <p style={{ color: 'var(--text-muted)', maxWidth: '500px', margin: '0 auto 2.5rem' }}>
-                        Ingresa un problema de negocio, técnico o social. Nuestro equipo de IAs especializadas debatirá para darte una perspectiva 360º.
+                    <h3>Plantea un Reto al Equipo</h3>
+                    <p>
+                        Ingresa un problema de negocio, técnico o social.
+                        Nuestro equipo de IAs especializadas debatirá para darte una perspectiva 360º.
                     </p>
 
-                    <form onSubmit={startDebate} style={{ maxWidth: '600px', margin: '0 auto', display: 'flex', gap: '1rem' }}>
+                    {/* ── Mode Selector ── */}
+                    <div className="swarm-mode-selector">
+                        <button
+                            type="button"
+                            className={`swarm-mode-option ${mode === 'single' ? 'swarm-mode-option--active' : ''}`}
+                            onClick={() => setMode('single')}
+                        >
+                            <MessageSquare size={22} />
+                            <div className="swarm-mode-option__text">
+                                <strong>Consulta Directa</strong>
+                                <span>Un experto responde, tú sigues conversando</span>
+                            </div>
+                        </button>
+                        <button
+                            type="button"
+                            className={`swarm-mode-option ${mode === 'discussion' ? 'swarm-mode-option--active' : ''}`}
+                            onClick={() => setMode('discussion')}
+                        >
+                            <MessagesSquare size={22} />
+                            <div className="swarm-mode-option__text">
+                                <strong>Mesa de Debate</strong>
+                                <span>Los expertos debaten entre sí hasta una conclusión</span>
+                            </div>
+                        </button>
+                    </div>
+
+                    <form onSubmit={startDebate} className="swarm-input-form">
                         <input
                             type="text"
                             value={topic}
                             onChange={(e) => setTopic(e.target.value)}
-                            placeholder="Ej: ¿Cómo optimizar la logística urbana en San Sebastián usando IA?"
-                            style={{
-                                flex: 1,
-                                padding: '1rem 1.5rem',
-                                borderRadius: 'var(--radius-md)',
-                                border: '2px solid var(--accent)',
-                                fontSize: '1.1rem',
-                                outline: 'none',
-                                transition: 'border-color 0.2s'
-                            }}
-                            onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
-                            onBlur={(e) => e.target.style.borderColor = 'var(--accent)'}
+                            placeholder="Ej: ¿Cómo optimizar la logística urbana usando IA?"
                         />
                         <button type="submit" className="btn btn-primary" style={{ padding: '0 2rem' }} disabled={!topic.trim()}>
-                            <Play size={20} /> Iniciar Debate
+                            <Play size={20} /> Iniciar
                         </button>
                     </form>
 
-                    <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', marginTop: '3rem' }}>
+                    <div className="swarm-agent-avatars">
                         {activeAgents.map(agent => (
-                            <div key={agent.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
-                                <div style={{
-                                    width: '40px', height: '40px',
-                                    borderRadius: '50%',
-                                    background: agent.color,
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    color: 'white',
-                                    boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
-                                }}>
-                                    <Bot size={20} />
+                            <div key={agent.id} className="swarm-agent-avatar">
+                                <div className="swarm-agent-avatar-circle" style={{ background: agent.color }}>
+                                    <Bot size={22} />
                                 </div>
-                                <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>{agent.name}</span>
+                                <span>{agent.name}</span>
                             </div>
                         ))}
                     </div>
                 </div>
             )}
 
+            {/* ══════════ DEBATE PHASE ══════════ */}
             {phase !== 'input' && (
-                <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '2rem', height: 'calc(100vh - 200px)' }}>
-                    {/* Agents Panel */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        {activeAgents.map((agent, idx) => (
-                            <div key={agent.id} style={{
-                                padding: '1.25rem',
-                                borderRadius: 'var(--radius-md)',
-                                background: 'white',
-                                borderLeft: `6px solid ${idx === activeAgentIndex ? agent.color : '#eee'}`,
-                                boxShadow: idx === activeAgentIndex ? 'var(--shadow-md)' : 'var(--shadow-sm)',
-                                transform: idx === activeAgentIndex ? 'translateX(10px)' : 'none',
-                                transition: 'all 0.3s ease',
-                                opacity: idx > activeAgentIndex && activeAgentIndex !== -1 ? 0.6 : 1
-                            }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                                    <div style={{
-                                        width: '32px', height: '32px',
-                                        borderRadius: '50%',
-                                        background: agent.color,
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        color: 'white'
-                                    }}>
-                                        <Bot size={18} />
-                                    </div>
-                                    <span style={{ fontWeight: 700, fontSize: '1rem' }}>{agent.name}</span>
-                                </div>
-                                {idx === activeAgentIndex && (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: agent.color }}>
-                                        <div className="typing-dot" style={{ width: '4px', height: '4px', background: agent.color, borderRadius: '50%', animation: 'typing 1s infinite' }}></div>
-                                        <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>Pensando...</span>
-                                    </div>
-                                )}
-                                {idx < activeAgentIndex || phase === 'finished' ? (
-                                    <div style={{ color: 'green', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}>
-                                        <CheckCircle size={14} /> Tarea completada
-                                    </div>
-                                ) : null}
-                            </div>
-                        ))}
-
-                        <div style={{ marginTop: 'auto', padding: '1.5rem', background: 'var(--secondary)', borderRadius: 'var(--radius-md)', color: 'white' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                                <Info size={20} />
-                                <span style={{ fontWeight: 600 }}>Sobre el proceso</span>
-                            </div>
-                            <p style={{ fontSize: '0.85rem', opacity: 0.9, lineHeight: 1.4 }}>
-                                Cada agente recibe el contexto de lo que sus colegas han aportado antes, permitiendo un hilo de pensamiento coherente.
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* Chat Log */}
-                    <div style={{
-                        background: 'white',
-                        borderRadius: 'var(--radius-md)',
-                        boxShadow: 'var(--shadow-md)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        overflow: 'hidden'
-                    }}>
-                        <div style={{
-                            flex: 1,
-                            padding: '2rem',
-                            overflowY: 'auto',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '1.5rem',
-                            background: '#F9FAFB'
-                        }}>
+                <div className="swarm-stage">
+                    {/* ── Chat Log (left) ── */}
+                    <div className="swarm-chat-panel">
+                        <div className="swarm-chat-messages">
+                            {/* Confirmed messages */}
                             {messages.map((msg, i) => (
-                                <div key={i} style={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: msg.type === 'user' ? 'flex-end' : 'flex-start',
-                                    gap: '0.5rem'
-                                }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)' }}>
-                                        {msg.type === 'agent' && <span style={{ color: msg.color }}>{msg.sender}</span>}
+                                <div key={i} className={`swarm-msg swarm-msg--${msg.type}`}>
+                                    <div className="swarm-msg__sender">
+                                        {msg.type === 'agent' && (
+                                            <>
+                                                <span style={{
+                                                    width: 8, height: 8,
+                                                    borderRadius: '50%',
+                                                    background: msg.color,
+                                                    display: 'inline-block',
+                                                }} />
+                                                <span style={{ color: msg.color }}>{msg.sender}</span>
+                                            </>
+                                        )}
+                                        {msg.type === 'summary' && (
+                                            <>
+                                                <span style={{
+                                                    width: 8, height: 8,
+                                                    borderRadius: '50%',
+                                                    background: msg.color,
+                                                    display: 'inline-block',
+                                                }} />
+                                                <span style={{ color: msg.color, fontWeight: 700 }}>{msg.sender}</span>
+                                            </>
+                                        )}
                                         {msg.type === 'user' && <span>Tú</span>}
                                     </div>
-                                    <div className="markdown-content" style={{
-                                        maxWidth: '85%',
-                                        padding: '1.25rem',
-                                        borderRadius: 'var(--radius-md)',
-                                        background: msg.type === 'user' ? 'var(--secondary)' : 'white',
-                                        color: msg.type === 'user' ? 'white' : 'var(--text-main)',
-                                        boxShadow: msg.type === 'agent' ? 'var(--shadow-sm)' : 'none',
-                                        border: msg.type === 'agent' ? `1px solid ${msg.color}20` : 'none',
-                                        lineHeight: 1.6
-                                    }}>
-                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                            {msg.text}
-                                        </ReactMarkdown>
+                                    <div
+                                        className={`swarm-msg__bubble markdown-content ${msg.type === 'summary' ? 'swarm-msg__bubble--summary' : ''}`}
+                                        style={msg.type === 'agent' ? { borderLeft: `3px solid ${msg.color}` }
+                                            : msg.type === 'summary' ? { borderLeft: `4px solid ${msg.color}`, background: 'linear-gradient(135deg, #fff8f3, #fff)' }
+                                            : {}}
+                                    >
+                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
                                     </div>
                                 </div>
                             ))}
+
+                            {/* Thinking indicator (shown while waiting for API) */}
+                            {thinkingAgent && (
+                                <div className="swarm-thinking">
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', maxWidth: '75%' }}>
+                                        <div className="swarm-thinking__label" style={{ color: thinkingAgent.color }}>
+                                            <Sparkles size={14} />
+                                            {thinkingAgent.name} está razonando…
+                                        </div>
+                                        <div className="swarm-thinking__bubble">
+                                            {thinkingAgent.phrase}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Summarizing indicator */}
+                            {phase === 'summarizing' && !thinkingAgent && (
+                                <div className="swarm-thinking">
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', maxWidth: '75%' }}>
+                                        <div className="swarm-thinking__label" style={{ color: '#F85900' }}>
+                                            <Brain size={14} />
+                                            El moderador está preparando la síntesis final…
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             <div ref={messagesEndRef} />
                         </div>
 
+                        {/* Input bar */}
                         {(phase === 'user_turn' || phase === 'finished') && (
-                            <div style={{ padding: '1.5rem', background: 'white', borderTop: '2px solid var(--primary)' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: 'var(--primary)', fontWeight: 600 }}>
+                            <div className="swarm-input-bar">
+                                <div className="swarm-input-bar__label">
                                     {phase === 'user_turn' ? (
                                         <><User size={18} /> Continúa la conversación:</>
                                     ) : (
-                                        <><Bot size={18} /> El debate ha concluido. ¿Deseas aportar algo más o hacer otra pregunta?</>
+                                        <><Bot size={18} /> {mode === 'discussion' ? 'El debate ha concluido con una síntesis. ¿Algo más?' : 'El debate ha concluido. ¿Algo más?'}</>
                                     )}
                                 </div>
-                                <form onSubmit={handleUserSubmit} style={{ display: 'flex', gap: '1rem' }}>
+                                <form onSubmit={handleUserSubmit}>
                                     <input
                                         type="text"
                                         value={userInput}
                                         onChange={(e) => setUserInput(e.target.value)}
-                                        placeholder="Escribe tu mensaje aquí..."
-                                        style={{
-                                            flex: 1,
-                                            padding: '0.75rem 1rem',
-                                            borderRadius: 'var(--radius-sm)',
-                                            border: '1px solid var(--accent)',
-                                            outline: 'none'
-                                        }}
+                                        placeholder="Escribe tu mensaje aquí…"
                                         autoFocus
                                     />
                                     <button type="submit" className="btn btn-primary" disabled={!userInput.trim()}>
@@ -411,16 +569,19 @@ const SwarmModule = () => {
                             </div>
                         )}
                     </div>
+
+                    {/* ── React Flow Graph (right) ── */}
+                    <div className="swarm-flow-panel">
+                        <SwarmFlow
+                            agents={activeAgents}
+                            activeAgentId={activeAgentId}
+                            doneAgentIds={doneAgentIds}
+                            moderatorActive={moderatorActive}
+                            moderatorConfigured={moderatorConfigured}
+                        />
+                    </div>
                 </div>
             )}
-
-            <style>{`
-                @keyframes typing {
-                    0% { opacity: 0.3; }
-                    50% { opacity: 1; }
-                    100% { opacity: 0.3; }
-                }
-            `}</style>
         </div>
     );
 };
