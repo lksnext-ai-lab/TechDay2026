@@ -155,7 +155,6 @@ async def decide_next(request: Request):
                 agent_speak_count[a["id"]] += 1
 
     not_participated = [aid for aid, count in agent_speak_count.items() if count == 0]
-    spoke_once = [aid for aid, count in agent_speak_count.items() if count == 1]
     spoke_twice = [aid for aid, count in agent_speak_count.items() if count >= 2]
     all_spoke_at_least_once = len(not_participated) == 0
     round_complete = all_spoke_at_least_once and len(spoke_twice) >= len(available) // 2
