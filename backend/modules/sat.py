@@ -11,11 +11,12 @@ from sqlalchemy.orm import Session
 from database import get_db
 import models
 import schemas
+import config
 
 router = APIRouter(prefix="/api/sat", tags=["sat"])
 
-MATTIN_URL = os.getenv("MATTIN_URL", "https://aict-desa.lksnext.com")
-API_KEY = os.getenv("API_KEY")
+MATTIN_URL = config.MATTIN_URL
+API_KEY = config.API_KEY
 
 # --- MATTIN AI HELPERS ---
 
