@@ -6,23 +6,32 @@ import { useConfig } from '../../../context/ConfigContext';
 const ManageIncidents = ({ onBack, onSelectIncident }) => {
     const { globalAppId, satConfig } = useConfig();
     const [incidents, setIncidents] = useState([]);
+    const [machinesMap, setMachinesMap] = useState({});
     const [loading, setLoading] = useState(true);
     const [filterStatus, setFilterStatus] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
-        loadIncidents();
+        loadData();
     }, []);
 
-    const loadIncidents = () => {
+    const loadData = async () => {
         setLoading(true);
-        satService.getIncidents().then(data => {
-            setIncidents(data);
+        try {
+            const [incidentsData, machinesData] = await Promise.all([
+                satService.getIncidents(),
+                satService.getMachines()
+            ]);
+            setIncidents(incidentsData);
+
+            const mMap = {};
+            machinesData.forEach(m => mMap[m.id] = m);
+            setMachinesMap(mMap);
+        } catch (error) {
+            console.error("Error loading data:", error);
+        } finally {
             setLoading(false);
-        }).catch(err => {
-            console.error(err);
-            setLoading(false);
-        });
+        }
     };
 
     const handleDelete = async (e, id) => {
@@ -60,9 +69,14 @@ const ManageIncidents = ({ onBack, onSelectIncident }) => {
 
     const filteredIncidents = incidents.filter(inc => {
         const matchesStatus = filterStatus === 'all' || inc.status === filterStatus;
+        const machine = machinesMap[inc.machine_id];
+        const machineType = machine ? machine.type : '';
+
         const matchesSearch = (inc.title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
             (inc.id?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-            (inc.machine_id?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+            (inc.machine_id?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+            (machineType.toLowerCase().includes(searchTerm.toLowerCase()));
+
         return matchesStatus && matchesSearch;
     });
 
@@ -95,7 +109,7 @@ const ManageIncidents = ({ onBack, onSelectIncident }) => {
                     <Search size={18} color="var(--text-muted)" />
                     <input
                         type="text"
-                        placeholder="Buscar por ID, título o electrodoméstico..."
+                        placeholder="Buscar por ID, título, tipo o electrodoméstico..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         style={{ border: 'none', background: 'transparent', outline: 'none', flex: 1, color: 'var(--text-main)' }}
@@ -130,72 +144,82 @@ const ManageIncidents = ({ onBack, onSelectIncident }) => {
                         No se encontraron incidencias.
                     </div>
                 ) : (
-                    filteredIncidents.map(inc => (
-                        <div
-                            key={inc.id}
-                            onClick={() => onSelectIncident(inc.id)}
-                            style={{
-                                background: 'var(--bg-card)',
-                                padding: '1.5rem',
-                                borderRadius: 'var(--radius-md)',
-                                boxShadow: 'var(--shadow-sm)',
-                                cursor: 'pointer',
-                                borderLeft: `4px solid ${getStatusColor(inc.status)}`,
-                                transition: 'transform 0.2s',
-                                display: 'grid',
-                                gridTemplateColumns: 'minmax(100px, 1fr) 2fr 1fr 40px',
-                                gap: '1rem',
-                                alignItems: 'center'
-                            }}
-                            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-                            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-                        >
-                            <div>
-                                <span style={{ fontWeight: 'bold', display: 'block', color: 'var(--text-main)' }}>{inc.id}</span>
-                                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{new Date(inc.created_at).toLocaleDateString()}</span>
+                    filteredIncidents.map(inc => {
+                        const machine = machinesMap[inc.machine_id];
+                        return (
+                            <div
+                                key={inc.id}
+                                onClick={() => onSelectIncident(inc.id)}
+                                style={{
+                                    background: 'var(--bg-card)',
+                                    padding: '1.5rem',
+                                    borderRadius: 'var(--radius-md)',
+                                    boxShadow: 'var(--shadow-sm)',
+                                    cursor: 'pointer',
+                                    borderLeft: `4px solid ${getStatusColor(inc.status)}`,
+                                    transition: 'transform 0.2s',
+                                    display: 'grid',
+                                    gridTemplateColumns: 'minmax(100px, 1fr) 2fr 1fr 40px',
+                                    gap: '1rem',
+                                    alignItems: 'center'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                                onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                            >
+                                <div>
+                                    <span style={{ fontWeight: 'bold', display: 'block', color: 'var(--text-main)' }}>{inc.id}</span>
+                                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{new Date(inc.created_at).toLocaleDateString()}</span>
+                                </div>
+                                <div>
+                                    <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-main)' }}>{inc.title || 'Incidencia sin título'}</h4>
+                                    <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        {machine && (
+                                            <span style={{ padding: '0.2rem 0.5rem', background: 'var(--accent)', color: 'white', borderRadius: '4px', fontWeight: 'bold' }}>
+                                                {machine.type}
+                                            </span>
+                                        )}
+                                        <span style={{ padding: '0.2rem 0.5rem', background: 'var(--bg-offset)', borderRadius: '4px' }}>
+                                            Model: {inc.machine_id}
+                                        </span>
+                                    </span>
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                    <span style={{
+                                        padding: '0.25rem 0.75rem',
+                                        borderRadius: '999px',
+                                        background: getStatusColor(inc.status),
+                                        color: 'white',
+                                        fontSize: '0.85rem',
+                                        fontWeight: 500
+                                    }}>
+                                        {getStatusLabel(inc.status)}
+                                    </span>
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                    <button
+                                        onClick={(e) => handleDelete(e, inc.id)}
+                                        style={{
+                                            background: 'transparent',
+                                            border: 'none',
+                                            color: 'var(--text-muted)',
+                                            cursor: 'pointer',
+                                            padding: '0.5rem',
+                                            borderRadius: '50%',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            transition: 'background 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => e.currentTarget.style.background = '#fee2e2'}
+                                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                    >
+                                        <Trash2 size={18} color="#ef4444" />
+                                    </button>
+                                </div>
                             </div>
-                            <div>
-                                <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-main)' }}>{inc.title || 'Incidencia sin título'}</h4>
-                                <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <span style={{ padding: '0.2rem 0.5rem', background: 'var(--bg-offset)', borderRadius: '4px' }}>{inc.machine_id}</span>
-                                </span>
-                            </div>
-                            <div style={{ textAlign: 'right' }}>
-                                <span style={{
-                                    padding: '0.25rem 0.75rem',
-                                    borderRadius: '999px',
-                                    background: getStatusColor(inc.status),
-                                    color: 'white',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 500
-                                }}>
-                                    {getStatusLabel(inc.status)}
-                                </span>
-                            </div>
-                            <div style={{ textAlign: 'right' }}>
-                                <button
-                                    onClick={(e) => handleDelete(e, inc.id)}
-                                    style={{
-                                        background: 'transparent',
-                                        border: 'none',
-                                        color: 'var(--text-muted)',
-                                        cursor: 'pointer',
-                                        padding: '0.5rem',
-                                        borderRadius: '50%',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        transition: 'background 0.2s'
-                                    }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#fee2e2'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                                >
-                                    <Trash2 size={18} color="#ef4444" />
-                                </button>
-                            </div>
-                        </div>
-                    ))
-                )}
+                        );
+                    }))
+                }
             </div>
         </div>
     );

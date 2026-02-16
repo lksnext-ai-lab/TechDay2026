@@ -1,0 +1,824 @@
+/* ═══════════════════════════════════════════════════════
+   SWARM MODULE — "Mission Control" Theme
+   ═══════════════════════════════════════════════════════ */
+
+.swarm-container {
+  padding: 1rem 1rem;
+  max-width: 100%;
+  margin: 0 auto;
+  min-height: calc(100vh - 80px);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header ── */
+.swarm-header {
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.swarm-header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.swarm-header-title h2 {
+  margin: 0;
+  color: var(--primary);
+  line-height: 1;
+}
+
+.swarm-header-title span {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* ── Input Phase ── */
+.swarm-input-card {
+  background: white;
+  padding: 3rem;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+  margin-top: 2rem;
+  animation: fadeInUp 0.5s ease-out;
+}
+
+.swarm-input-icon {
+  background: rgba(248, 89, 0, 0.1);
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 2rem;
+  color: var(--primary);
+}
+
+.swarm-input-card h3 {
+  font-size: 1.75rem;
+  margin-bottom: 1rem;
+}
+
+.swarm-input-card > p {
+  color: var(--text-muted);
+  max-width: 500px;
+  margin: 0 auto 2.5rem;
+}
+
+.swarm-input-form {
+  max-width: 600px;
+  margin: 0 auto;
+  display: flex;
+  gap: 1rem;
+}
+
+.swarm-input-form input {
+  flex: 1;
+  padding: 1rem 1.5rem;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--accent);
+  font-size: 1.1rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.swarm-input-form input:focus {
+  border-color: var(--primary);
+}
+
+.swarm-agent-avatars {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 3rem;
+}
+
+.swarm-agent-avatar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.swarm-agent-avatar-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.swarm-agent-avatar-circle:hover {
+  transform: scale(1.15);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+.swarm-agent-avatar span {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* ── Mode Selector ── */
+.swarm-mode-selector {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 2rem;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.swarm-mode-option {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--accent);
+  background: white;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  text-align: left;
+  color: var(--text-muted);
+}
+
+.swarm-mode-option:hover {
+  border-color: var(--primary);
+  background: rgba(248, 89, 0, 0.03);
+}
+
+.swarm-mode-option--active {
+  border-color: var(--primary);
+  background: rgba(248, 89, 0, 0.06);
+  color: var(--text-main);
+  box-shadow: 0 0 0 3px rgba(248, 89, 0, 0.12);
+}
+
+.swarm-mode-option--active svg {
+  color: var(--primary);
+}
+
+.swarm-mode-option__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.swarm-mode-option__text strong {
+  font-size: 0.95rem;
+  color: var(--text-main);
+}
+
+.swarm-mode-option__text span {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+/* ── Mode Badge (shown during debate) ── */
+.swarm-mode-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.swarm-mode-badge--single {
+  background: rgba(0, 51, 102, 0.08);
+  color: var(--secondary);
+}
+
+.swarm-mode-badge--discussion {
+  background: rgba(248, 89, 0, 0.1);
+  color: var(--primary);
+}
+
+/* ── Round Counter Badge ── */
+.swarm-round-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: rgba(248, 89, 0, 0.12);
+  color: var(--primary);
+  animation: statusPulse 1.5s ease-in-out infinite;
+}
+
+/* ── Summary Message Bubble ── */
+.swarm-msg--summary {
+  align-items: flex-start;
+}
+
+.swarm-msg__bubble--summary {
+  box-shadow: 0 2px 12px rgba(248, 89, 0, 0.12), var(--shadow-sm);
+  border-radius: var(--radius-md);
+  padding: 1.25rem 1.5rem;
+}
+
+/* ══════ Main Stage (Debate) ══════ */
+.swarm-stage {
+  display: grid;
+  grid-template-columns: 1fr 500px;
+  gap: 1rem;
+  flex: 1;
+  min-height: 0;
+  height: calc(100vh - 120px);
+  animation: fadeInUp 0.4s ease-out;
+}
+
+/* ── React Flow Graph Panel ── */
+.swarm-flow-panel {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12), var(--shadow-md);
+  background: #1e2540;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+/* Warm ambient glow at center + soft vignette at edges */
+.swarm-flow-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 50% 50% at 50% 50%, rgba(248, 89, 0, 0.06) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.swarm-flow-panel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 85% 75% at 50% 50%,
+    transparent 0%,
+    rgba(0, 0, 0, 0.1) 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.swarm-flow-panel .react-flow__background {
+  background: #1e2540 !important;
+}
+
+.swarm-flow-panel .react-flow__pane {
+  cursor: default;
+}
+
+/* ── Chat Panel ── */
+.swarm-chat-panel {
+  background: white;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: calc(100vh - 120px); /* Fixed height matching stage */
+  min-height: 0;
+}
+
+.swarm-chat-messages {
+  flex: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  background: #f9fafb;
+  scroll-behavior: smooth;
+}
+
+/* ── Message Bubbles ── */
+.swarm-msg {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  animation: msgReveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.swarm-msg--user {
+  align-items: flex-end;
+}
+
+.swarm-msg--agent {
+  align-items: flex-start;
+}
+
+.swarm-msg__sender {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.swarm-msg__bubble {
+  max-width: 85%;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-md);
+  line-height: 1.6;
+  position: relative;
+}
+
+.swarm-msg--user .swarm-msg__bubble {
+  background: var(--secondary);
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+.swarm-msg--agent .swarm-msg__bubble {
+  background: white;
+  color: var(--text-main);
+  box-shadow: var(--shadow-sm);
+  border-bottom-left-radius: 4px;
+}
+
+/* ── Thinking Indicator ── */
+.swarm-thinking {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  animation: msgReveal 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.swarm-thinking__bubble {
+  max-width: 75%;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, rgba(248, 89, 0, 0.05), rgba(0, 51, 102, 0.05));
+  border: 1px dashed rgba(248, 89, 0, 0.3);
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.swarm-thinking__label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.3rem;
+}
+
+/* ── Input Bar ── */
+.swarm-input-bar {
+  padding: 1.25rem 1.5rem;
+  background: white;
+  border-top: 2px solid var(--primary);
+}
+
+.swarm-input-bar__label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.swarm-input-bar form {
+  display: flex;
+  gap: 1rem;
+}
+
+.swarm-input-bar input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--accent);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.swarm-input-bar input:focus {
+  border-color: var(--primary);
+}
+
+/* ═══════════════════════════════════════════════════════
+   REACT FLOW — Custom Nodes
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Agent Node ── */
+.agent-node {
+  background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(16px);
+  border-radius: 18px;
+  padding: 16px 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: default;
+  position: relative;
+}
+
+/* Soft ambient glow behind node when idle */
+.agent-node::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 24px;
+  background: radial-gradient(
+    circle at 50% 40%,
+    color-mix(in srgb, var(--node-color, #F85900) 8%, transparent) 0%,
+    transparent 70%
+  );
+  z-index: -1;
+  transition: opacity 0.5s ease;
+  opacity: 0.5;
+}
+
+/* Thinking pulse ring behind avatar */
+.agent-node__pulse-ring {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  border: 2px solid;
+  opacity: 0;
+  animation: pulseRing 1.8s ease-out infinite;
+  pointer-events: none;
+}
+
+.agent-node--active {
+  border-color: var(--node-color, #F85900);
+  background: rgba(255, 255, 255, 0.12);
+  transform: scale(1.1);
+  box-shadow:
+    0 0 24px color-mix(in srgb, var(--node-color, #F85900) 35%, transparent),
+    0 0 60px color-mix(in srgb, var(--node-color, #F85900) 15%, transparent),
+    0 4px 20px rgba(0, 0, 0, 0.3);
+  animation: nodeGlow 2s ease-in-out infinite;
+}
+
+.agent-node--active::before {
+  opacity: 1;
+  background: radial-gradient(
+    circle at 50% 40%,
+    color-mix(in srgb, var(--node-color, #F85900) 20%, transparent) 0%,
+    transparent 70%
+  );
+}
+
+.agent-node--done {
+  border-color: rgba(72, 187, 120, 0.6);
+  background: rgba(72, 187, 120, 0.08);
+  box-shadow:
+    0 0 14px rgba(72, 187, 120, 0.2),
+    0 0 40px rgba(72, 187, 120, 0.08);
+}
+
+.agent-node--done::before {
+  opacity: 0.7;
+  background: radial-gradient(
+    circle at 50% 40%,
+    rgba(72, 187, 120, 0.12) 0%,
+    transparent 70%
+  );
+}
+
+.agent-node--idle {
+  opacity: 0.75;
+}
+
+.agent-node__avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  transition: all 0.4s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  position: relative;
+  z-index: 1;
+}
+
+.agent-node--active .agent-node__avatar {
+  box-shadow:
+    0 0 12px color-mix(in srgb, var(--node-color, #F85900) 50%, transparent),
+    0 0 30px color-mix(in srgb, var(--node-color, #F85900) 30%, transparent),
+    0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.agent-node--done .agent-node__avatar {
+  box-shadow:
+    0 0 10px rgba(72, 187, 120, 0.35),
+    0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+/* Spinner icon rotation */
+.agent-node__spinner {
+  animation: spin 1.2s linear infinite;
+}
+
+.agent-node__name {
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 600;
+  font-size: 0.82rem;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.agent-node__status {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 10px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
+}
+
+.agent-node__status--thinking {
+  background: rgba(248, 89, 0, 0.25);
+  color: #ffc89e;
+  animation: statusPulse 1.5s ease-in-out infinite;
+  box-shadow: 0 0 8px rgba(248, 89, 0, 0.2);
+}
+
+.agent-node__status--done {
+  background: rgba(72, 187, 120, 0.25);
+  color: #a7f3d0;
+}
+
+.agent-node__status--idle {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* ── Moderator Node ── */
+.moderator-node {
+  background: rgba(248, 89, 0, 0.06);
+  backdrop-filter: blur(16px);
+  border-radius: 22px;
+  padding: 18px 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  min-width: 150px;
+  border: 2px solid rgba(248, 89, 0, 0.25);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+/* Soft ambient glow behind moderator */
+.moderator-node::before {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  border-radius: 30px;
+  background: radial-gradient(
+    circle at 50% 45%,
+    rgba(248, 89, 0, 0.08) 0%,
+    transparent 70%
+  );
+  z-index: -1;
+  transition: opacity 0.5s ease;
+}
+
+/* Expanding ring when moderator is active */
+.moderator-node__ring {
+  position: absolute;
+  inset: -8px;
+  border-radius: 28px;
+  border: 2px solid rgba(248, 89, 0, 0.5);
+  animation: moderatorRingExpand 2s ease-out infinite;
+  pointer-events: none;
+}
+
+.moderator-node--active {
+  border-color: #F85900;
+  background: rgba(248, 89, 0, 0.1);
+  transform: scale(1.08);
+  box-shadow:
+    0 0 30px rgba(248, 89, 0, 0.3),
+    0 0 70px rgba(248, 89, 0, 0.12),
+    0 4px 24px rgba(0, 0, 0, 0.3);
+  animation: moderatorGlow 2s ease-in-out infinite;
+}
+
+.moderator-node--active::before {
+  background: radial-gradient(
+    circle at 50% 45%,
+    rgba(248, 89, 0, 0.18) 0%,
+    transparent 70%
+  );
+}
+
+.moderator-node__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #F85900, #ff8c42);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  transition: all 0.4s ease;
+  box-shadow: 0 4px 16px rgba(248, 89, 0, 0.3);
+  position: relative;
+  z-index: 1;
+}
+
+.moderator-node--active .moderator-node__icon {
+  box-shadow:
+    0 0 16px rgba(248, 89, 0, 0.5),
+    0 0 40px rgba(248, 89, 0, 0.25),
+    0 4px 16px rgba(248, 89, 0, 0.3);
+}
+
+.moderator-node__brain--active {
+  animation: brainPulse 1.5s ease-in-out infinite;
+}
+
+.moderator-node__label {
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.moderator-pulse {
+  display: inline-block;
+  color: #ff8c42;
+  animation: pulseBlink 1s ease-in-out infinite;
+}
+
+/* ── Edges ── */
+.react-flow__edge-path {
+  transition: stroke 0.4s ease, stroke-width 0.4s ease;
+}
+
+
+
+/* ═══════════════════════════════════════════════════════
+   ANIMATIONS - Enhanced Organic Movement
+   ═══════════════════════════════════════════════════════ */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes msgReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulseBlink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@keyframes pulseRing {
+  0% {
+    transform: translateX(-50%) scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateX(-50%) scale(1.8);
+    opacity: 0;
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes statusPulse {
+  0%, 100% { opacity: 0.8; }
+  50%      { opacity: 1; }
+}
+
+@keyframes moderatorRingExpand {
+  0% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.25);
+  }
+}
+
+@keyframes brainPulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.12); }
+}
+
+@keyframes nodeGlow {
+  0%, 100% {
+    box-shadow:
+      0 0 24px color-mix(in srgb, var(--node-color, #F85900) 35%, transparent),
+      0 0 60px color-mix(in srgb, var(--node-color, #F85900) 15%, transparent),
+      0 4px 20px rgba(0, 0, 0, 0.3);
+  }
+  50% {
+    box-shadow:
+      0 0 32px color-mix(in srgb, var(--node-color, #F85900) 45%, transparent),
+      0 0 80px color-mix(in srgb, var(--node-color, #F85900) 20%, transparent),
+      0 4px 20px rgba(0, 0, 0, 0.3);
+  }
+}
+
+@keyframes moderatorGlow {
+  0%, 100% {
+    box-shadow:
+      0 0 30px rgba(248, 89, 0, 0.3),
+      0 0 70px rgba(248, 89, 0, 0.12),
+      0 4px 24px rgba(0, 0, 0, 0.3);
+  }
+  50% {
+    box-shadow:
+      0 0 40px rgba(248, 89, 0, 0.4),
+      0 0 90px rgba(248, 89, 0, 0.18),
+      0 4px 24px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* ── React Flow overrides ── */
+.swarm-flow-panel .react-flow__attribution {
+  display: none;
+}
+
+.swarm-flow-panel .react-flow__handle {
+  opacity: 0;
+  width: 8px;
+  height: 8px;
+  min-width: 8px;
+  min-height: 8px;
+  background: transparent;
+  border: none;
+}
+
+/* Smoothstep edges — ensure clean corners */
+.swarm-flow-panel .react-flow__edge.animated path {
+  stroke-dasharray: 6;
+  animation: edgeDash 0.6s linear infinite;
+}
+
+@keyframes edgeDash {
+  to { stroke-dashoffset: -12; }
+}
+
+/* ── Responsive ── */
+@media (max-width: 1100px) {
+  .swarm-stage {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 400px;
+  }
+}

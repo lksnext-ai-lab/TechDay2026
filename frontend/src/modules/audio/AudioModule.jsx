@@ -6,7 +6,7 @@ import { useConfig } from '../../context/ConfigContext';
 import SchemaInfoButton from '../../components/SchemaInfoButton';
 
 const AudioModule = () => {
-    const { apiConfig } = useConfig();
+    const { apiConfig, globalAppId, audioConfig } = useConfig();
     const API_BASE_URL = apiConfig.baseUrl || 'http://localhost:8001';
 
     const [isRecording, setIsRecording] = useState(false);
@@ -91,6 +91,12 @@ const AudioModule = () => {
     const handleTranscribe = async () => {
         if (!audioFile) return;
 
+        // Validate configuration
+        if (!globalAppId || !audioConfig?.agentId) {
+            setError("Por favor, configura el App ID y Agent ID para Audio en la página de configuración.");
+            return;
+        }
+
         setLoading(true);
         setError(null);
         try {
@@ -106,8 +112,8 @@ const AudioModule = () => {
             if (!uploadResponse.ok) throw new Error("Error al subir el audio");
             const uploadData = await uploadResponse.json();
 
-            // 2. Request transcription
-            const transcribeResponse = await fetch(`${API_BASE_URL}/api/audio/transcribe/${uploadData.id}`, {
+            // 2. Request transcription from Mattin AI
+            const transcribeResponse = await fetch(`${API_BASE_URL}/api/audio/transcribe/${uploadData.id}?app_id=${globalAppId}&agent_id=${audioConfig.agentId}`, {
                 method: 'POST',
             });
 
