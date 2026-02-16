@@ -143,7 +143,7 @@ const Home = () => {
                             </div>
                             <div className="logo-badge" style={{ width: '100%' }}>
                                 <a href="https://azure.microsoft.com/" target="_blank" rel="noopener noreferrer">
-                                    <img src={`${import.meta.env.BASE_URL}/azure_logo.png`} alt="Microsoft Azure" />
+                                    <img src={`${import.meta.env.BASE_URL}/foundry_logo.jpg`} alt="Microsoft Azure" style={{ maxHeight: 'none' }} />
                                 </a>
                             </div>
                             <div className="logo-badge" style={{ width: '100%' }}>
