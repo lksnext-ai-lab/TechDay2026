@@ -107,7 +107,11 @@ const Ocr = () => {
             const data = await response.json();
             console.log("DEBUG: Response Data:", data);
 
-            setResultData(data.response);
+            let responseContent = data.response;
+            if (typeof responseContent === 'object' && responseContent !== null) {
+                responseContent = "```json\n" + JSON.stringify(responseContent, null, 2) + "\n```";
+            }
+            setResultData(responseContent);
             setState('result');
 
         } catch (error) {

@@ -75,7 +75,10 @@ const Chat = () => {
             }
 
             const data = await response.json();
-            const botResponse = data.response; // Adjust based on actual API response structure if different
+            let botResponse = data.response;
+            if (typeof botResponse === 'object' && botResponse !== null) {
+                botResponse = "```json\n" + JSON.stringify(botResponse, null, 2) + "\n```";
+            }
 
             if (data.conversation_id) {
                 setConversationId(data.conversation_id);

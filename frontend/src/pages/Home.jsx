@@ -153,7 +153,7 @@ const Home = () => {
                             </div>
                             <div className="logo-badge" style={{ width: '100%' }}>
                                 <a href="https://www.dell.com" target="_blank" rel="noopener noreferrer">
-                                    <img src="/dell_logo.svg" alt="Dell Technologies" />
+                                    <img src={`${import.meta.env.BASE_URL}/dell_logo.svg`} alt="Dell Technologies" />
                                 </a>
                             </div>
                         </div>
